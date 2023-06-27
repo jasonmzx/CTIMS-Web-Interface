@@ -5,7 +5,6 @@ import * as THREE from 'three';
 
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader';
-import { VTKLoader } from 'three/examples/jsm/loaders/VTKLoader';
 
 import { GUI } from 'lil-gui';
 
@@ -20,11 +19,13 @@ const Interface = () => {
 
     //Loaded Data File States:
 
+
+    const [warningHeader,setWarningHeader] = React.useState(null);
+
     const [inputNRRD, setInputNRRD] = React.useState(null);
 
     const [loadedNRRDstr1, setLnrrd1] = React.useState("/nrrd_ressources/volume_ref.nrrd");
     const [loadedNRRDstr2, setLnrrd2] = React.useState("/nrrd_ressources/mask.nrrd");
-    const [loadedVTKstr, setVtk] = React.useState("/vtk_ressources/output.vtk");
 
     function createBoundingBox(volume) {
         const boxGeometry = new THREE.BoxBufferGeometry(volume.xLength, volume.yLength, volume.zLength);
@@ -80,6 +81,7 @@ const Interface = () => {
       };
       const blobUrl = URL.createObjectURL(file);
   
+      setWarningHeader(<div className="banner b_loading"> Successfully Loaded in {file.name} </div>);
       setInputNRRD(blobUrl);
     });
 
@@ -126,16 +128,20 @@ const Interface = () => {
 
         // GUI setup
         const gui = new GUI();
-        gui.add(defaultGUI, "nrrd").name("Add Reference Scan (.nrrd)");
+
+        //GUI File Inputs Section:
+        const GUI_INPUT = gui.addFolder('Add Scans (.nrrd)');
+
+        GUI_INPUT.add(defaultGUI, "nrrd").name("Add Reference Scan");
+        GUI_INPUT.add(defaultGUI, "nrrd").name("Add Input Scan");
 
         // NRRDLoader setup
         const loader1 = new NRRDLoader();
         const loader2 = new NRRDLoader();
-        const loaderVTK = new VTKLoader();
 
         let volume1, volume2; // We'll store the volumes here so they can be accessed later
 
-        // // Load and add first volume to the scene
+        // Load and add first volume to the scene
         loader1.load(inputNRRD, function (volume) {
             volume1 = volume;
 
@@ -144,12 +150,6 @@ const Interface = () => {
             setupGui(); // Try to setup the GUI after each volume loads
         });
 
-        // if (inputNRRD) {
-        //     volume1 = loader1.parse(inputNRRD);
-        //     volume1.boundingBox = createBoundingBox(volume1);
-        //     scene.add(volume1.boundingBox);
-        //     setupGui();
-        // }
         
         // Load and add second volume to the scene
         loader2.load(loadedNRRDstr2, function (volume) {
@@ -169,7 +169,10 @@ const Interface = () => {
 
             // Make sure both volumes have loaded
             if (!volume1 || !volume2) {
+                setWarningHeader(<div className="banner b_error">You don't have any scans uploaded, navigate to: Add Scans (.nrrd)</div>);
                 return;
+            } else {
+                setWarningHeader(null);
             }
             // If we've reached this point, both volumes are ready
         
@@ -283,12 +286,8 @@ const Interface = () => {
 
     return (
         <>
-
+      {warningHeader}
         <div ref={mount} style={{width: '100%', height: '100vh'}} />
-        <div style={{height : '4vh'}} >
-            MENU 
-
-        </div>
         </>
     );
 }
