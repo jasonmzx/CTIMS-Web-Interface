@@ -1,15 +1,30 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
+
+//Three Example JSM Loaders:
+
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader';
+import { VTKLoader } from 'three/examples/jsm/loaders/VTKLoader';
+
 import { GUI } from 'lil-gui';
 
 const Interface = () => {
+
+
+    function iLog  (string) {
+        console.log('%c[Interface.js] '+string, 'background: #34568B; color: #EFC050')
+    }
+
     let mount = useRef(null);
 
-    const [loadedNRRDstr1, setLnrrd1] = React.useState("/nrrd_ressources/volume.nrrd");
+    //Loaded Data File States:
+
+    const [inputNRRD, setInputNRRD] = React.useState(null);
+
+    const [loadedNRRDstr1, setLnrrd1] = React.useState("/nrrd_ressources/volume_ref.nrrd");
     const [loadedNRRDstr2, setLnrrd2] = React.useState("/nrrd_ressources/mask.nrrd");
-    
+    const [loadedVTKstr, setVtk] = React.useState("/vtk_ressources/output.vtk");
 
     function createBoundingBox(volume) {
         const boxGeometry = new THREE.BoxBufferGeometry(volume.xLength, volume.yLength, volume.zLength);
@@ -44,6 +59,30 @@ const Interface = () => {
         }
     }
 
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'file';
+    hiddenInput.accept = '.nrrd';
+    hiddenInput.style.display = 'none';
+    document.body.appendChild(hiddenInput);
+    
+    // Add a function to handle file selection
+    hiddenInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      
+      // Create a FileReader to read the contents of the file
+      const reader = new FileReader();
+    
+      // Set an onload function to handle the file data
+      reader.onload = function(e) {
+        const fileData = e.target.result;
+        
+        // TODO: Add code to load the .NRRD file with the path.
+      };
+      const blobUrl = URL.createObjectURL(file);
+  
+      setInputNRRD(blobUrl);
+    });
+
 
     useEffect(() => {
         // Scene, camera, and renderer setup
@@ -59,7 +98,10 @@ const Interface = () => {
         dirLight.position.set(200, 200, 200);
         scene.add(dirLight);
 
+        camera.position.x = 300;
+        camera.position.y = 300;
         camera.position.z = 300;
+        
         scene.add(camera);
 
         // Mount renderer to DOM
@@ -75,40 +117,60 @@ const Interface = () => {
         controls.panSpeed = 2;
         controls.update();
 
+
+
+        const defaultGUI = {
+            nrrd :  () => {hiddenInput.click()}
+        }
+
+
         // GUI setup
         const gui = new GUI();
+        gui.add(defaultGUI, "nrrd").name("Add Reference Scan (.nrrd)");
 
         // NRRDLoader setup
         const loader1 = new NRRDLoader();
         const loader2 = new NRRDLoader();
+        const loaderVTK = new VTKLoader();
 
         let volume1, volume2; // We'll store the volumes here so they can be accessed later
 
-        // Load and add first volume to the scene
-        loader1.load(loadedNRRDstr1, function (volume) {
+        // // Load and add first volume to the scene
+        loader1.load(inputNRRD, function (volume) {
             volume1 = volume;
 
             volume1.boundingBox = createBoundingBox(volume1);
             scene.add(volume1.boundingBox);
             setupGui(); // Try to setup the GUI after each volume loads
         });
+
+        // if (inputNRRD) {
+        //     volume1 = loader1.parse(inputNRRD);
+        //     volume1.boundingBox = createBoundingBox(volume1);
+        //     scene.add(volume1.boundingBox);
+        //     setupGui();
+        // }
         
         // Load and add second volume to the scene
         loader2.load(loadedNRRDstr2, function (volume) {
             volume2 = volume;
             setupGui(); // Try to setup the GUI after each volume loads
         });
+
         
     
     //! SETUP GUI FUNCTION : 
 
     //? Note, the SETUP function should be in the Use.Effect Scope
     function setupGui() {
+
+
+            const INITIAL_OPACITY_OF_DEFECT = 0.5;
+
             // Make sure both volumes have loaded
             if (!volume1 || !volume2) {
                 return;
             }
-        
             // If we've reached this point, both volumes are ready
         
             // Extract slices for both volumes
@@ -123,6 +185,16 @@ const Interface = () => {
                 y: volume2.extractSlice('y', Math.floor(volume2.RASDimensions[1] / 2)),
                 z: volume2.extractSlice('z', Math.floor(volume2.RASDimensions[2] / 4))
             };
+
+            //Upon Initializing, add some Opacity to Slices2
+            [...Object.values(slices2)].forEach(slice => {
+                slice.mesh.material.opacity = INITIAL_OPACITY_OF_DEFECT;
+                slice.mesh.material.transparent = true; // Enable transparency
+                slice.mesh.material.needsUpdate = true; // Required for material property changes to take effect
+            });
+
+            //! BANDAID: Fix the Z offset bug:
+            slices2.z.index = slices1.z.index;
         
             // Add slices to scene
             Object.values(slices1).forEach(slice => scene.add(slice.mesh));
@@ -131,19 +203,23 @@ const Interface = () => {
                 scene.add(slice.mesh);
             });
 
+            const fixPOS = 350;
+
             const cameraPositions = {
                 setX: function() {
-                    camera.position.set(300, 0, 0); // adjust as necessary
+                    camera.position.set(500, 0, 0); // adjust as necessary
                     camera.lookAt(scene.position);
+                    sliceSetHelper(fixPOS,700,0,1,[slices1,slices2]);
                 },
                 setY: function() {
-                    camera.position.set(0, 300, 0); // adjust as necessary
+                    camera.position.set(0, 500, 0); // adjust as necessary
                     camera.lookAt(scene.position);
+                    sliceSetHelper(0,fixPOS,0,1,[slices1,slices2]);
                 },
                 setZ: function() {
                     camera.position.set(0, 0, 500); // adjust as necessary
                     camera.lookAt(scene.position);
-                    sliceSetHelper(0,0,null,1,[slices1, slices2]);
+                    sliceSetHelper(0,700,fixPOS,1,[slices1, slices2]);
                 }
             };
 
@@ -160,7 +236,7 @@ const Interface = () => {
             });
         
             // Add opacity controller
-            GUI_VOLUMES.add({ opacity: 0.5 }, 'opacity', 0, 1).name('Opacity').onChange(function (value) {
+            GUI_VOLUMES.add({ opacity: INITIAL_OPACITY_OF_DEFECT }, 'opacity', 0, 1).name('Opacity').onChange(function (value) {
 
                 [...Object.values(slices2)].forEach(slice => {
                     slice.mesh.material.opacity = value;
@@ -197,19 +273,21 @@ const Interface = () => {
         
         window.addEventListener('resize', handleResize);
 
+        iLog("Mounting...");
         // Clean up on unmount
         return () => {
             window.removeEventListener('resize', handleResize);
             mount.current.removeChild(renderer.domElement);
         };
-    }, [loadedNRRDstr1, loadedNRRDstr2]);
+    }, [loadedNRRDstr1, loadedNRRDstr2, inputNRRD]);
 
     return (
         <>
-        <div ref={mount} style={{width: '100%', height: '95vh'}} />
+
+        <div ref={mount} style={{width: '100%', height: '100vh'}} />
         <div style={{height : '4vh'}} >
             MENU 
-            <button onClick={() => {setLnrrd1('/I.nrrd'); setLnrrd2('/J.nrrd');}}>SET TO I. NRRD & J. NRRD Instead</button>
+
         </div>
         </>
     );
