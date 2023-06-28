@@ -1,0 +1,8 @@
+
+
+
+
+#Ignore large .nrrd files, and compiled Python stuff
+
+*.nrrd 
+__pycache__/

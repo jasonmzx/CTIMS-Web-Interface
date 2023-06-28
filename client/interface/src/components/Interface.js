@@ -6,7 +6,11 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader';
 
+//React libs
 import { GUI } from 'lil-gui';
+
+//Local stuff
+import { PostNrrdFile } from '../util/requests';
 
 const Interface = () => {
 
@@ -17,15 +21,30 @@ const Interface = () => {
 
     let mount = useRef(null);
 
-    //Loaded Data File States:
 
+    //UI State:
+
+    const [rs, setRs] = React.useState('❌');
+    const [is, setIs] = React.useState('❌');
+
+
+    //API React state(s):
+
+    const [formData, setFormData] = React.useState(() => new FormData());
+
+    //Loaded Data File States:
 
     const [warningHeader,setWarningHeader] = React.useState(null);
 
-    const [inputNRRD, setInputNRRD] = React.useState(null);
 
-    const [loadedNRRDstr1, setLnrrd1] = React.useState("/nrrd_ressources/volume_ref.nrrd");
-    const [loadedNRRDstr2, setLnrrd2] = React.useState("/nrrd_ressources/mask.nrrd");
+    //Blob URL paths:
+
+    const [referenceNRRD, setReference_NRRD] = React.useState(null);
+    const [inputNRRD, setInput_NRRD] = React.useState("/nrrd_ressources/volume_ref.nrrd");
+
+    const [api_POSTED_NRRD, setAPN] = React.useState(null); //Mask response from FastAPI
+
+
 
     function createBoundingBox(volume) {
         const boxGeometry = new THREE.BoxBufferGeometry(volume.xLength, volume.yLength, volume.zLength);
@@ -66,27 +85,74 @@ const Interface = () => {
     hiddenInput.style.display = 'none';
     document.body.appendChild(hiddenInput);
     
-    // Add a function to handle file selection
-    hiddenInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      
+    // Function to handle file selection
+    const handleFileSelection = (file, setReference_NRRD, setRs) => {
+      setFormData((prevFormData) => {
+        prevFormData.append("file", file);
+        console.log("[ set form data ]");
+        return prevFormData;
+      });
+    
       // Create a FileReader to read the contents of the file
       const reader = new FileReader();
     
       // Set an onload function to handle the file data
       reader.onload = function(e) {
         const fileData = e.target.result;
-        
+    
         // TODO: Add code to load the .NRRD file with the path.
       };
       const blobUrl = URL.createObjectURL(file);
-  
+    
       setWarningHeader(<div className="banner b_loading"> Successfully Loaded in {file.name} </div>);
-      setInputNRRD(blobUrl);
-    });
-
+      setReference_NRRD(blobUrl);
+      setRs('✔');
+    };
 
     useEffect(() => {
+
+    //! ########################## Hovering GUI in the Top-Right ( lil-gui.js ) ##########################
+
+        const defaultGUI = {
+            ref_nrrd_upload :  () => {
+            //&Sets to Reference NRRD States:
+                hiddenInput.addEventListener('change', (event) => {
+                  const file = event.target.files[0];
+                  handleFileSelection(file, setReference_NRRD, setRs);
+                });
+            
+                hiddenInput.click();
+              },
+            
+            input_nrrd_upload :  () => {
+            //&Sets to Input NRRD States:
+                hiddenInput.addEventListener('change', (event) => {
+                  const file = event.target.files[0];
+                  handleFileSelection(file, setInput_NRRD, setIs);
+                });
+            
+                hiddenInput.click();
+            },  
+
+            post :  () => {
+                //Returns file URL
+                PostNrrdFile(formData, setAPN);
+            }
+        }
+
+        // GUI setup
+        const gui = new GUI();
+
+        //GUI File Inputs Section:
+        const GUI_INPUT = gui.addFolder('Add Scans (.nrrd)');
+
+        GUI_INPUT.add(defaultGUI, "ref_nrrd_upload").name("Add Reference Scan "+rs);
+        GUI_INPUT.add(defaultGUI, "input_nrrd_upload").name("Add Input Scan"+is);
+        GUI_INPUT.add(defaultGUI, "post").name("Post !");
+
+
+        //! ########################## THREE.js Setup ##########################
+
         // Scene, camera, and renderer setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, mount.current.clientWidth / mount.current.clientHeight, 0.01, 1e10);
@@ -120,21 +186,6 @@ const Interface = () => {
         controls.update();
 
 
-
-        const defaultGUI = {
-            nrrd :  () => {hiddenInput.click()}
-        }
-
-
-        // GUI setup
-        const gui = new GUI();
-
-        //GUI File Inputs Section:
-        const GUI_INPUT = gui.addFolder('Add Scans (.nrrd)');
-
-        GUI_INPUT.add(defaultGUI, "nrrd").name("Add Reference Scan");
-        GUI_INPUT.add(defaultGUI, "nrrd").name("Add Input Scan");
-
         // NRRDLoader setup
         const loader1 = new NRRDLoader();
         const loader2 = new NRRDLoader();
@@ -142,7 +193,7 @@ const Interface = () => {
         let volume1, volume2; // We'll store the volumes here so they can be accessed later
 
         // Load and add first volume to the scene
-        loader1.load(inputNRRD, function (volume) {
+        loader1.load(referenceNRRD, function (volume) {
             volume1 = volume;
 
             volume1.boundingBox = createBoundingBox(volume1);
@@ -152,18 +203,16 @@ const Interface = () => {
 
         
         // Load and add second volume to the scene
-        loader2.load(loadedNRRDstr2, function (volume) {
+        loader2.load(api_POSTED_NRRD, function (volume) {
             volume2 = volume;
             setupGui(); // Try to setup the GUI after each volume loads
         });
 
-        
     
     //! SETUP GUI FUNCTION : 
 
     //? Note, the SETUP function should be in the Use.Effect Scope
     function setupGui() {
-
 
             const INITIAL_OPACITY_OF_DEFECT = 0.5;
 
@@ -282,7 +331,7 @@ const Interface = () => {
             window.removeEventListener('resize', handleResize);
             mount.current.removeChild(renderer.domElement);
         };
-    }, [loadedNRRDstr1, loadedNRRDstr2, inputNRRD]);
+    }, [inputNRRD, api_POSTED_NRRD, referenceNRRD]);
 
     return (
         <>
