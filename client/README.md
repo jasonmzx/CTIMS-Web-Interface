@@ -19,7 +19,7 @@ gaber@155:~/CTIMS-Web-Interface/client/interface$
 docker build -t ctims-web-frontend .
 ```
 
-3.
+3. 
 
 
 

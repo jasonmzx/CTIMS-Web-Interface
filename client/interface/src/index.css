@@ -36,3 +36,79 @@ code {
   color:black;
 }
 
+
+/* POP UP CSS */
+
+.modal {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+}
+
+.modal-content {
+  position: relative;
+  background-color: white;
+  padding: 20px;
+  border-radius: 4px;
+  width: 80%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.close-button {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: none;
+  background-color: red;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.close-button:hover {
+  background-color: darkred;
+}
+
+.blue-button {
+  border: none;
+  background-color: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none; /* This can be useful if you use the styles for a link */
+}
+
+.blue-button:hover {
+  background-color: #0056b3;
+}
+
+
+
+
+input[type="url"] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+input[type="url"]::placeholder {
+  color: lightgrey;
+  font-style: italic;
+}
+
+

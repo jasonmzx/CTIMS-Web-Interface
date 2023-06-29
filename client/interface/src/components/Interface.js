@@ -11,6 +11,7 @@ import { GUI } from 'lil-gui';
 
 //Local stuff
 import { PostNrrdFile } from '../util/requests';
+import SessionPopUp from './SessionPopUp';
 
 const Interface = () => {
 
@@ -23,6 +24,8 @@ const Interface = () => {
 
 
     //UI State:
+
+    const [sessionPopUp, setSessionPopUp] = React.useState(<></>);
 
     const [rs, setRs] = React.useState('❌');
     const [is, setIs] = React.useState('❌');
@@ -137,6 +140,10 @@ const Interface = () => {
             post :  () => {
                 //Returns file URL
                 PostNrrdFile(formData, setAPN);
+            },
+
+            toggle_session_popup : () => {
+                setSessionPopUp(<SessionPopUp onClose={() => {setSessionPopUp(<></>)}}/>)
             }
         }
 
@@ -149,6 +156,7 @@ const Interface = () => {
         GUI_INPUT.add(defaultGUI, "ref_nrrd_upload").name("Add Reference Scan "+rs);
         GUI_INPUT.add(defaultGUI, "input_nrrd_upload").name("Add Input Scan"+is);
         GUI_INPUT.add(defaultGUI, "post").name("Post !");
+        GUI_INPUT.add(defaultGUI, "toggle_session_popup").name("Join Session");
 
 
         //! ########################## THREE.js Setup ##########################
@@ -338,6 +346,7 @@ const Interface = () => {
 
     return (
         <>
+        {sessionPopUp}
       {warningHeader}
         <div ref={mount} style={{width: '100%', height: '100vh'}} />
         </>
