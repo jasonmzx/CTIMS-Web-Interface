@@ -106,7 +106,7 @@ const Interface = () => {
     
       setWarningHeader(<div className="banner b_loading"> Successfully Loaded in {file.name} </div>);
       setReference_NRRD(blobUrl);
-      setRs('✔');
+      setRs('✅');
     };
 
     useEffect(() => {
@@ -203,7 +203,10 @@ const Interface = () => {
 
         
         // Load and add second volume to the scene
-        loader2.load(api_POSTED_NRRD, function (volume) {
+
+//TODOO: should be api posted nrrd
+
+        loader2.load(inputNRRD, function (volume) {
             volume2 = volume;
             setupGui(); // Try to setup the GUI after each volume loads
         });
