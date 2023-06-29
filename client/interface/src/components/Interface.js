@@ -12,6 +12,7 @@ import { GUI } from 'lil-gui';
 //Local stuff
 import { PostNrrdFile } from '../util/requests';
 import SessionPopUp from './SessionPopUp';
+import InspectionReqPopUp from './InspectionReqPopUp';
 
 const Interface = () => {
 
@@ -26,7 +27,9 @@ const Interface = () => {
     //UI State:
 
     const [sessionPopUp, setSessionPopUp] = React.useState(<></>);
-
+    
+    const [inspectionReqPopUp, setInspectionReqPopUp] = React.useState(<></>);
+    
     const [rs, setRs] = React.useState('❌');
     const [is, setIs] = React.useState('❌');
 
@@ -46,6 +49,7 @@ const Interface = () => {
     const [inputNRRD, setInput_NRRD] = React.useState("/nrrd_ressources/volume_ref.nrrd");
 
     const [api_POSTED_NRRD, setAPN] = React.useState(null); //Mask response from FastAPI
+
 
 
 
@@ -112,6 +116,15 @@ const Interface = () => {
       setRs('✅');
     };
 
+
+    //! NRRD Volumes POST Callback (from popup)
+
+    const PostNRRDs = async () => {
+        let resp = await PostNrrdFile(formData, setAPN);
+        return resp;
+    }
+
+
     useEffect(() => {
 
     //! ########################## Hovering GUI in the Top-Right ( lil-gui.js ) ##########################
@@ -139,11 +152,20 @@ const Interface = () => {
 
             post :  () => {
                 //Returns file URL
-                PostNrrdFile(formData, setAPN);
+
             },
 
             toggle_session_popup : () => {
                 setSessionPopUp(<SessionPopUp onClose={() => {setSessionPopUp(<></>)}}/>)
+            },
+
+            toggle_insp_req_popup : () => {
+                setInspectionReqPopUp(<InspectionReqPopUp 
+                    onClose={() => {setInspectionReqPopUp(<></>)}}
+                    refBlob={referenceNRRD}
+                    inpBlob={inputNRRD}
+                    postCallback={PostNRRDs}
+                />)
             }
         }
 
@@ -151,12 +173,16 @@ const Interface = () => {
         const gui = new GUI();
 
         //GUI File Inputs Section:
-        const GUI_INPUT = gui.addFolder('Add Scans (.nrrd)');
 
-        GUI_INPUT.add(defaultGUI, "ref_nrrd_upload").name("Add Reference Scan "+rs);
-        GUI_INPUT.add(defaultGUI, "input_nrrd_upload").name("Add Input Scan"+is);
-        GUI_INPUT.add(defaultGUI, "post").name("Post !");
-        GUI_INPUT.add(defaultGUI, "toggle_session_popup").name("Join Session");
+        gui.add(defaultGUI, "toggle_session_popup").name("Join Session");
+        gui.add(defaultGUI, "toggle_insp_req_popup").name("Request Inspection");
+        gui.add(defaultGUI, "post").name("Post !");
+
+        const GUI_ADD_SCANS_SECTION = gui.addFolder('Add Scans (.nrrd)');
+
+        GUI_ADD_SCANS_SECTION.add(defaultGUI, "ref_nrrd_upload").name("Add Reference Scan "+rs);
+        GUI_ADD_SCANS_SECTION.add(defaultGUI, "input_nrrd_upload").name("Add Input Scan"+is);
+
 
 
         //! ########################## THREE.js Setup ##########################
@@ -214,7 +240,7 @@ const Interface = () => {
 
 //TODOO: should be api posted nrrd
 
-        loader2.load(inputNRRD, function (volume) {
+        loader2.load(api_POSTED_NRRD, function (volume) {
             volume2 = volume;
             setupGui(); // Try to setup the GUI after each volume loads
         });
@@ -229,7 +255,7 @@ const Interface = () => {
 
             // Make sure both volumes have loaded
             if (!volume1 || !volume2) {
-                setWarningHeader(<div className="banner b_error">You don't have any scans uploaded, navigate to: Add Scans (.nrrd)</div>);
+                setWarningHeader(<div className="banner b_error">You don't have enough scans uploaded, navigate to: Add Scans (.nrrd)</div>);
                 return;
             } else {
                 setWarningHeader(null);
@@ -344,13 +370,15 @@ const Interface = () => {
         };
     }, [inputNRRD, api_POSTED_NRRD, referenceNRRD]);
 
-    return (
-        <>
+    return (<>
+        {/* POP UP ELEMENTS (USUALLY DORMANT) */}
         {sessionPopUp}
+        {inspectionReqPopUp}
+
+        {/*Actual UI of Interface+ */}
       {warningHeader}
         <div ref={mount} style={{width: '100%', height: '100vh'}} />
-        </>
-    );
+        </>);
 }
 
 export default Interface;
