@@ -4,11 +4,10 @@ FROM node:latest
 # Create app directory
 WORKDIR /opt/app
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available
-COPY package*.json ./
+# Copy all files in the current directory to the WORKDIR in the Docker image
+COPY . .
 
+# Install app dependencies
 RUN npm install
 
 # Your app binds to port 3000 so you'll use the EXPOSE instruction to have it mapped by the docker daemon
