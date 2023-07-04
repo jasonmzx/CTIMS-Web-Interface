@@ -38,3 +38,7 @@ async def process_nrrd(file: UploadFile = File(...)):
     reponse_path = os.path.join('nrrd_ressources', "mask.nrrd")
 
     return FileResponse(reponse_path, media_type="application/octet-stream", filename=file.filename)
+
+@app.get("/ping")
+async def ping_server():
+    return {"message": "API Gateway is Running !"}

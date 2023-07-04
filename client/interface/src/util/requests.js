@@ -31,3 +31,21 @@ export async function PostNrrdFile(formEntry, callback) {
     return error.message; //! Return Error String
   }
 }
+
+
+export async function PingServer() {
+  try {
+    // Get the LS Variable value of the `gateway variable`
+    const gatewayURL = getLocalStorageVariable(getLSvarName());
+
+    console.log(gatewayURL);
+    
+    const response = await fetch(gatewayURL + "/ping", {
+      method: 'GET'
+    });
+    
+    return response.json();
+  } catch (error) {
+    return { "error": error };
+  }
+}

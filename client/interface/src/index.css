@@ -107,7 +107,7 @@ input[type="url"] {
 }
 
 input[type="url"]::placeholder {
-  color: lightgrey;
+  color: grey;
   font-style: italic;
 }
 
@@ -125,3 +125,19 @@ input[type="url"]::placeholder {
   100% { transform: rotate(360deg); }
 }
 
+
+.refresh_button {
+  background-color: #ffeb3b; /* Bright yellow background */
+  color: #000000; /* Black text */
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  transition: transform 0.3s ease-in-out;
+}
+
+.refresh_button:hover {
+  transform: scale(1.1); /* Apply scale transformation on hover */
+  background-color: #000000; /* Bright yellow background */
+  color: #ffeb3b;
+}

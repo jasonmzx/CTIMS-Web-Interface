@@ -22,5 +22,12 @@ docker build -t ctims-web-frontend .
 3. 
 
 
+```bash
+cd ../..
+docker run -p 3000:3000 -d ctims-web-frontend
+```
+
+
+
 
 ---

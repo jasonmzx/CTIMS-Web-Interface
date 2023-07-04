@@ -1,5 +1,9 @@
 import React from 'react'
 import TimeCounter from './TimeCounter';
+
+import PingServerComp from './PingServerComp';
+
+import { PingServer } from '../util/requests';
 import { getLSvarName, getLocalStorageVariable } from '../util/handleLS';
 
 const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
@@ -66,9 +70,7 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
         }
     }
 
-
-
-   const inspectionRender = (state) => {
+    const inspectionRender = (state) => {
     
     if(!state) {
     return <> <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
@@ -77,7 +79,9 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
         </svg>
 
         <span><b>Demo Session Gateway:</b> {gatewayValue ? gatewayValue : <><br/>❌ You aren't connected to a Demo Session, go to <b style={{color : "darkblue"}}>Join Session</b> and connect to a gateway...</>}</span>
+    
     </div>
+    <PingServerComp PingServer={PingServer}/>
 
     <br/>
     {/* Reference Volume Message */}
