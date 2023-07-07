@@ -3,7 +3,7 @@ import React from 'react'
 import { addKeyToCoordsObject } from '../util/handleLS';
 
 
-const SaveCoordsPopUp = ({onClose, intArr}) => {
+const SaveCoordsPopUp = ({onClose, onCloseReload, intArr}) => {
     
     const inputRef = React.useRef(null);
 
@@ -36,7 +36,7 @@ const SaveCoordsPopUp = ({onClose, intArr}) => {
 
                         <button className="blue-button" onClick={() => {
                             addKeyToCoordsObject(inputRef.current.value, intArr);
-                            onClose();
+                            onCloseReload();
                             }}>SET Defect Name</button>
                     </div>  
             </div> {/*ENDOF INSIDE THE POPUP */}

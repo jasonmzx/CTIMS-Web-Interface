@@ -36,6 +36,12 @@ code {
   color:black;
 }
 
+.b_info {
+  background-color: lightsalmon;
+  color:black;
+  font-size: 16px;
+}
+
 
 /* POP UP CSS */
 

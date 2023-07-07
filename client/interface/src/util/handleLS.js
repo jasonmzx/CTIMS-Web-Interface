@@ -31,7 +31,7 @@ export function setLocalStorageVariable(variableName, value) {
     //!Add a new key to the coords object
     export function addKeyToCoordsObject(key, value) {
       // Assert that the key is a string and the value is an array of integers of length 3
-      if (typeof key !== 'string' || !Array.isArray(value) || value.length !== 3 || !value.every(Number.isInteger)) {
+      if (typeof key !== 'string' || !Array.isArray(value) || value.length !== 6) {
           throw new Error('Invalid input: key must be a string and value must be an array of integers of length 3');
       }
 

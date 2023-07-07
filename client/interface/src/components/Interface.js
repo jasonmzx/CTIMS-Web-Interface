@@ -62,7 +62,7 @@ const Interface = () => {
     //Blob URL paths:
 
     const [referenceNRRD, setReference_NRRD] = React.useState(null);
-    const [inputNRRD, setInput_NRRD] = React.useState("/nrrd_ressources/volume_ref.nrrd");
+    const [inputNRRD, setInput_NRRD] = React.useState(null);
 
     const [api_POSTED_NRRD, setAPN] = React.useState(null); //Mask response from FastAPI
 
@@ -130,7 +130,7 @@ const Interface = () => {
       };
       const blobUrl = URL.createObjectURL(file);
     
-      setWarningHeader(<div className="banner b_loading"> Successfully Loaded in {file.name} </div>);
+      setWarningHeader(<div className="banner b_loading"> Loading `{file.name}` in... </div>);
       setReference_NRRD(blobUrl);
       setRs('✅');
     };
@@ -270,9 +270,10 @@ const Interface = () => {
 
             // Make sure both volumes have loaded
             if (!volume1 || !volume2) {
-                setWarningHeader(<div className="banner b_error">You don't have enough scans uploaded, navigate to: Add Scans (.nrrd)</div>);
+                setWarningHeader(<div className="banner b_error">Add Reference & Input Scans (.nrrd) {" >> "} Join Session {" >> "} Request Inspection</div>);
                 return;
-            } else {
+            } 
+            else {
                 setWarningHeader(null);
             }
             // If we've reached this point, both volumes are ready
@@ -331,14 +332,20 @@ const Interface = () => {
                         const yP = slices1.y.index;
                         const zP = slices1.z.index;
 
+                        const xC = camera.position.x;
+                        const yC = camera.position.y;
+                        const zC = camera.position.z;
+
                         setSaveCoordsPopUp(<SaveCoordsPopUp 
                             onClose={ () =>{setSaveCoordsPopUp(<></>);
-                                            incrementCount();        
                         } }
-                            intArr={[xP,yP,zP]}
+                            onCloseReload ={ () =>{setSaveCoordsPopUp(<></>);
+                            incrementCount(); }}
+
+                            intArr={[xP, yP, zP, xC, yC, zC]}
                             />)
 
-                        console.log(xP, yP, zP);
+                        console.log(xP, yP, zP, xC, yC, zC);
                 },
 
                 setStar : function () {} //Literally doesn't do anything, placeholder for Dynamic coord setter fns
@@ -372,8 +379,8 @@ const Interface = () => {
             GUI_VOLUMES.add(volumeControlGUI, 'setY').name('Camera to Y');
             GUI_VOLUMES.add(volumeControlGUI, 'setZ').name('Camera to Z');
 
-            const GUI_CLASSIFICATION_VIEW = gui.addFolder('Classification');
-            GUI_CLASSIFICATION_VIEW.add(volumeControlGUI, "save_coords").name("Screenshots Coords");
+            const GUI_CLASSIFICATION_VIEW = gui.addFolder('Positions of Interest');
+            GUI_CLASSIFICATION_VIEW.add(volumeControlGUI, "save_coords").name("📷 Save Position 📷");
 
             //? ################ SHOW ALL COORDS IN MENU UPON REFRESH #####################
 
@@ -386,16 +393,21 @@ const Interface = () => {
                 // Loop through the keys of the 'coords' object
                 for (let key in allCoords) {    
 
+                    const keyStr = ">> "+key;
+
                     //TODO: Set the xyz key
                     GUI_CLASSIFICATION_VIEW
                     .add(volumeControlGUI, "setStar")
-                    .name(key)
+                    .name(keyStr)
                     .onChange(() => {
 
                         const val = allCoords[key];
 
 
-                        sliceSetHelper(val[0], val[1], val[2], [slices1,slices2])
+                        sliceSetHelper(val[0], val[1], val[2], [slices1,slices2]);
+                        camera.position.x = val[3];
+                        camera.position.y = val[4];
+                        camera.position.z = val[5];
                     });
                     // Print the key and its corresponding array
                     console.log(`Key: ${key}, Value: ${JSON.stringify(allCoords[key])}`);
