@@ -10,9 +10,12 @@ import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader';
 import { GUI } from 'lil-gui';
 
 //Local stuff
-import { PostNrrdFile } from '../util/requests';
+import { PostNrrdFile, Post_2_NRRDs } from '../util/requests';
 import SessionPopUp from './SessionPopUp';
 import InspectionReqPopUp from './InspectionReqPopUp';
+import WelcomePopUp from './WelcomePopUp';
+import SaveCoordsPopUp from './SaveCoordsPopUp';
+import { getLocalStorageVariable } from '../util/handleLS';
 
 const Interface = () => {
 
@@ -26,13 +29,16 @@ const Interface = () => {
 
     //UI State:
 
+    //& POP UPS:
+
     const [sessionPopUp, setSessionPopUp] = React.useState(<></>);
-    
     const [inspectionReqPopUp, setInspectionReqPopUp] = React.useState(<></>);
+    const [welcomePopUp, setWelcomePopUp] =  React.useState(<></>);
+    const [saveCoordsPopUp,setSaveCoordsPopUp] = React.useState(<></>);
+
     
     const [rs, setRs] = React.useState('❌');
     const [is, setIs] = React.useState('❌');
-
 
     //API React state(s):
 
@@ -41,6 +47,16 @@ const Interface = () => {
     //Loaded Data File States:
 
     const [warningHeader,setWarningHeader] = React.useState(null);
+
+    //! Potential Tick Bandaid fix:
+    const [count, setCount] = React.useState(0);
+
+    // Function to increment state
+    const incrementCount = () => {
+        setCount(prevCount => prevCount + 1);
+    };
+
+
 
 
     //Blob URL paths:
@@ -68,11 +84,13 @@ const Interface = () => {
 
     //? NOTE: If any sliceSetHelper axis are set to `null`, they will be unaffected
 
-    const sliceSetHelper = (Xpos, Ypos, Zpos, opacity, slices) => {
+    const sliceSetHelper = (Xpos, Ypos, Zpos, slices) => {
         
         for(const slice of slices){
 
-            slice.x.index = Xpos;
+            //slice.x.index = Xpos;
+            // slice.y.index = Ypos;
+            // slice.z.index = Zpos;
 
             if(Xpos !== null){ slice.x.index = Xpos; }
 
@@ -93,10 +111,11 @@ const Interface = () => {
     document.body.appendChild(hiddenInput);
     
     // Function to handle file selection
-    const handleFileSelection = (file, setReference_NRRD, setRs) => {
+    const handleFileSelection = (file, setReference_NRRD, setRs, fName) => {
       setFormData((prevFormData) => {
-        prevFormData.append("file", file);
-        console.log("[ set form data ]");
+
+        prevFormData.append(fName, file);
+        console.log("[ set form data ] "+fName);
         return prevFormData;
       });
     
@@ -120,7 +139,7 @@ const Interface = () => {
     //! NRRD Volumes POST Callback (from popup)
 
     const PostNRRDs = async () => {
-        let resp = await PostNrrdFile(formData, setAPN);
+        let resp = await Post_2_NRRDs(formData, setAPN);
         return resp;
     }
 
@@ -134,7 +153,7 @@ const Interface = () => {
             //&Sets to Reference NRRD States:
                 hiddenInput.addEventListener('change', (event) => {
                   const file = event.target.files[0];
-                  handleFileSelection(file, setReference_NRRD, setRs);
+                  handleFileSelection(file, setReference_NRRD, setRs, "file1");
                 });
             
                 hiddenInput.click();
@@ -144,16 +163,11 @@ const Interface = () => {
             //&Sets to Input NRRD States:
                 hiddenInput.addEventListener('change', (event) => {
                   const file = event.target.files[0];
-                  handleFileSelection(file, setInput_NRRD, setIs);
+                  handleFileSelection(file, setInput_NRRD, setIs, "file2");
                 });
             
                 hiddenInput.click();
             },  
-
-            post :  () => {
-                //Returns file URL
-
-            },
 
             toggle_session_popup : () => {
                 setSessionPopUp(<SessionPopUp onClose={() => {setSessionPopUp(<></>)}}/>)
@@ -176,12 +190,13 @@ const Interface = () => {
 
         gui.add(defaultGUI, "toggle_session_popup").name("Join Session");
         gui.add(defaultGUI, "toggle_insp_req_popup").name("Request Inspection");
-        gui.add(defaultGUI, "post").name("Post !");
 
         const GUI_ADD_SCANS_SECTION = gui.addFolder('Add Scans (.nrrd)');
 
         GUI_ADD_SCANS_SECTION.add(defaultGUI, "ref_nrrd_upload").name("Add Reference Scan "+rs);
         GUI_ADD_SCANS_SECTION.add(defaultGUI, "input_nrrd_upload").name("Add Input Scan"+is);
+
+
 
 
 
@@ -294,28 +309,45 @@ const Interface = () => {
 
             const fixPOS = 350;
 
-            const cameraPositions = {
+            const volumeControlGUI = {
                 setX: function() {
                     camera.position.set(500, 0, 0); // adjust as necessary
                     camera.lookAt(scene.position);
-                    sliceSetHelper(fixPOS,700,0,1,[slices1,slices2]);
+                    sliceSetHelper(fixPOS,700,0,[slices1,slices2]);
                 },
                 setY: function() {
                     camera.position.set(0, 500, 0); // adjust as necessary
                     camera.lookAt(scene.position);
-                    sliceSetHelper(0,fixPOS,0,1,[slices1,slices2]);
+                    sliceSetHelper(0,fixPOS,0,[slices1,slices2]);
                 },
                 setZ: function() {
                     camera.position.set(0, 0, 500); // adjust as necessary
                     camera.lookAt(scene.position);
-                    sliceSetHelper(0,700,fixPOS,1,[slices1, slices2]);
-                }
+                    sliceSetHelper(0,700,fixPOS,[slices1, slices2]);
+                },
+
+                save_coords : function() {
+                        const xP = slices1.x.index;
+                        const yP = slices1.y.index;
+                        const zP = slices1.z.index;
+
+                        setSaveCoordsPopUp(<SaveCoordsPopUp 
+                            onClose={ () =>{setSaveCoordsPopUp(<></>);
+                                            incrementCount();        
+                        } }
+                            intArr={[xP,yP,zP]}
+                            />)
+
+                        console.log(xP, yP, zP);
+                },
+
+                setStar : function () {} //Literally doesn't do anything, placeholder for Dynamic coord setter fns
             };
 
             //Add Yellow Bounding box to scene
         
             // Create sliders
-            const GUI_VOLUMES = gui.addFolder('Volume Main');
+            const GUI_VOLUMES = gui.addFolder('Volume Inspection');
             ['x', 'y', 'z'].forEach(axis => {
                 GUI_VOLUMES.add(slices1[axis], 'index', 0, volume1.RASDimensions[0], 1).name(`${axis.toUpperCase()}-axis`).onChange(() => {
                     slices1[axis].repaint();
@@ -336,9 +368,41 @@ const Interface = () => {
 
             GUI_VOLUMES.add(volume1.boundingBox, 'visible').name('Toggle Contour Box');
 
-            GUI_VOLUMES.add(cameraPositions, 'setX').name('Camera to X');
-            GUI_VOLUMES.add(cameraPositions, 'setY').name('Camera to Y');
-            GUI_VOLUMES.add(cameraPositions, 'setZ').name('Camera to Z');
+            GUI_VOLUMES.add(volumeControlGUI, 'setX').name('Camera to X');
+            GUI_VOLUMES.add(volumeControlGUI, 'setY').name('Camera to Y');
+            GUI_VOLUMES.add(volumeControlGUI, 'setZ').name('Camera to Z');
+
+            const GUI_CLASSIFICATION_VIEW = gui.addFolder('Classification');
+            GUI_CLASSIFICATION_VIEW.add(volumeControlGUI, "save_coords").name("Screenshots Coords");
+
+            //? ################ SHOW ALL COORDS IN MENU UPON REFRESH #####################
+
+            let allCoords = getLocalStorageVariable("coords");
+
+            // If the 'coords' object exists, parse it
+            if (allCoords) {
+                allCoords = JSON.parse(allCoords);
+        
+                // Loop through the keys of the 'coords' object
+                for (let key in allCoords) {    
+
+                    //TODO: Set the xyz key
+                    GUI_CLASSIFICATION_VIEW
+                    .add(volumeControlGUI, "setStar")
+                    .name(key)
+                    .onChange(() => {
+
+                        const val = allCoords[key];
+
+
+                        sliceSetHelper(val[0], val[1], val[2], [slices1,slices2])
+                    });
+                    // Print the key and its corresponding array
+                    console.log(`Key: ${key}, Value: ${JSON.stringify(allCoords[key])}`);
+                }
+            } else {
+                console.log("No coordinates found in local storage");
+            }
 
         } //! ENDOF SETUP FUNCTION
 
@@ -368,17 +432,23 @@ const Interface = () => {
             window.removeEventListener('resize', handleResize);
             mount.current.removeChild(renderer.domElement);
         };
-    }, [inputNRRD, api_POSTED_NRRD, referenceNRRD]);
+    }, [inputNRRD, api_POSTED_NRRD, referenceNRRD,count]);
+
+    React.useEffect( () => {
+        setWelcomePopUp(<WelcomePopUp 
+            onClose={() => {setWelcomePopUp(<></>)}}/>);
+    }, [])
 
     return (<>
         {/* POP UP ELEMENTS (USUALLY DORMANT) */}
+        {welcomePopUp}
         {sessionPopUp}
         {inspectionReqPopUp}
+        {saveCoordsPopUp}
 
         {/*Actual UI of Interface+ */}
       {warningHeader}
         <div ref={mount} style={{width: '100%', height: '100vh'}} />
         </>);
 }
-
 export default Interface;

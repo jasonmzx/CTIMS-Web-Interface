@@ -59,6 +59,8 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
             const loader = <>
                     <div class="loader" ></div>
                     <h4>The gateway is processing your request...</h4>
+
+                    Time Elapsed:
                     <TimeCounter start={true}/>
                 </>;
 

@@ -32,6 +32,36 @@ export async function PostNrrdFile(formEntry, callback) {
   }
 }
 
+export async function Post_2_NRRDs(formEntry, callback) {
+  try {
+    //Get's the LS Variable value of the `gateway variable`, needlessly bloated wrapper tbh
+    const gatewayURL = getLocalStorageVariable(getLSvarName());
+
+    console.log(gatewayURL);
+
+    const RESPONSE = await fetch(gatewayURL+"/two_input_nrrd_proc_fake", {
+      method: 'POST',
+      body: formEntry
+    });
+
+    console.log(RESPONSE.status);
+
+    if (!RESPONSE.ok) {
+      throw new Error(`HTTP error! status: ${RESPONSE.status}`);
+    }
+
+    const fileBlob = await RESPONSE.blob();
+
+    // Create a URL object from the file blob
+    const fileURL = URL.createObjectURL(fileBlob);
+    callback(fileURL);
+    console.log(fileURL);
+
+    return RESPONSE.status; //! Return A Status Code (With Blob?)
+  } catch (error) {
+    return error.message; //! Return Error String
+  }
+}
 
 export async function PingServer() {
   try {
