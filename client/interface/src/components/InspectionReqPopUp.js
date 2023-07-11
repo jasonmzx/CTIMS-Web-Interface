@@ -52,7 +52,7 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
         let checkStat = await checkNRRDproc_cb(pid);
 
         if(checkStat.status === 1) { // If Process is complete, let's load it in
-            getNRRDmask_cb(checkStat.process_id); //RETURNED F_PATH, TODO: CHANGE THE NAME ITS BAD LOL
+            getNRRDmask_cb(checkStat.process_path); //RETURNED F_PATH, TODO: CHANGE THE NAME ITS BAD LOL
         } else {
             
         }

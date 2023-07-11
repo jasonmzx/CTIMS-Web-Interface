@@ -161,7 +161,7 @@ const Interface = () => {
             //&Sets to Reference NRRD States:
                 hiddenInput.addEventListener('change', (event) => {
                   const file = event.target.files[0];
-                  handleFileSelection(file, setReference_NRRD, setRs, "file1");
+                  handleFileSelection(file, setReference_NRRD, setRs, "ref_file");
                 });
             
                 hiddenInput.click();
@@ -171,7 +171,7 @@ const Interface = () => {
             //&Sets to Input NRRD States:
                 hiddenInput.addEventListener('change', (event) => {
                   const file = event.target.files[0];
-                  handleFileSelection(file, setInput_NRRD, setIs, "file2");
+                  handleFileSelection(file, setInput_NRRD, setIs, "input_file");
                 });
             
                 hiddenInput.click();

@@ -69,7 +69,7 @@ export async function POST_2_NRRDs_Begin_Process(formEntry, callback) {
   try {
     const gatewayURL = getLocalStorageVariable(getLSvarName());
 
-    const RESPONSE = await fetch(gatewayURL+"/two_input_nrrd_proc", {
+    const RESPONSE = await fetch(gatewayURL+"/begin_nrrd_proc", {
       method: 'POST',
       body: formEntry
     });
@@ -88,7 +88,7 @@ export async function NRRD_Check_Process(str) {
   try {
     const gatewayURL = getLocalStorageVariable(getLSvarName());
 
-    const RESPONSE = await fetch(gatewayURL+"/process_status/"+str, {
+    const RESPONSE = await fetch(gatewayURL+"/check_nrrd_proc/"+str, {
       method: 'GET'
     });
 
