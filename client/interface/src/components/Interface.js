@@ -10,7 +10,7 @@ import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader';
 import { GUI } from 'lil-gui';
 
 //Local stuff
-import { PostNrrdFile, Post_2_NRRDs } from '../util/requests';
+import { GET_MASK_From_Process, POST_2_NRRDs_Begin_Process, NRRD_Check_Process } from '../util/requests';
 import SessionPopUp from './SessionPopUp';
 import InspectionReqPopUp from './InspectionReqPopUp';
 import WelcomePopUp from './WelcomePopUp';
@@ -138,18 +138,26 @@ const Interface = () => {
 
     //! NRRD Volumes POST Callback (from popup)
 
-    const PostNRRDs = async () => {
-        let resp = await Post_2_NRRDs(formData, setAPN);
+    const PostNRRDsProc = async () => {
+
+        //setAPN will set API mask resp:
+
+        let resp = await POST_2_NRRDs_Begin_Process(formData);
         return resp;
+    }
+
+    const getMASKfile = async (Process_ID_String) => {
+        let resp = await GET_MASK_From_Process(Process_ID_String, setAPN);
+        console.log("MASK APN SET");
     }
 
 
     useEffect(() => {
 
-    //! ########################## Hovering GUI in the Top-Right ( lil-gui.js ) ##########################
+    //! ########################## Hovering GUI in the Top-Right -> Default Section ( lil-gui.js ) ##########################
 
         const defaultGUI = {
-            ref_nrrd_upload :  () => {
+            ref_nrrd_upload :  () => { //! REFERENCE NRRD
             //&Sets to Reference NRRD States:
                 hiddenInput.addEventListener('change', (event) => {
                   const file = event.target.files[0];
@@ -159,7 +167,7 @@ const Interface = () => {
                 hiddenInput.click();
               },
             
-            input_nrrd_upload :  () => {
+            input_nrrd_upload :  () => { //! INPUT NRRD
             //&Sets to Input NRRD States:
                 hiddenInput.addEventListener('change', (event) => {
                   const file = event.target.files[0];
@@ -169,17 +177,19 @@ const Interface = () => {
                 hiddenInput.click();
             },  
 
-            toggle_session_popup : () => {
-                setSessionPopUp(<SessionPopUp onClose={() => {setSessionPopUp(<></>)}}/>)
+            toggle_session_popup : () => { //! GATEWAY SESSION POP UP TOGGLE
+                setSessionPopUp(<SessionPopUp onClose={() => {setSessionPopUp(<></>)}}/>);
             },
 
-            toggle_insp_req_popup : () => {
+            toggle_insp_req_popup : () => { //! INSPECTION POP UP TOGGLE
                 setInspectionReqPopUp(<InspectionReqPopUp 
                     onClose={() => {setInspectionReqPopUp(<></>)}}
                     refBlob={referenceNRRD}
                     inpBlob={inputNRRD}
-                    postCallback={PostNRRDs}
-                />)
+                    postNRRDs_cb={PostNRRDsProc}
+                    checkNRRDproc_cb={NRRD_Check_Process}
+                    getNRRDmask_cb ={getMASKfile}
+                />);
             }
         }
 

@@ -6,11 +6,12 @@ import PingServerComp from './PingServerComp';
 import { PingServer } from '../util/requests';
 import { getLSvarName, getLocalStorageVariable } from '../util/handleLS';
 
-const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
+const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDproc_cb, getNRRDmask_cb}) => {
 
     //React Constants & States:
     const [start, setStart] = React.useState(false);
-    const [postResp, setPostResp] = React.useState(null);
+    const [process, setProcess] = React.useState(""); //TODO: Change this to LocalStorage?
+    const [JSX_State_Render, set_JSX_Renderer] = React.useState(null);
 
     const gatewayValue = getLocalStorageVariable(getLSvarName())
 
@@ -20,32 +21,42 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
         };
     }  
 
+    //! Handles the Action of Posting .NRRDs to the API
+
+        //& For Clean Code :
+    const processCreatedJSX = (pid) => {
+        return (
+            <>
+            <h3>[ CTIMS-Web-Interface Process CREATED ]</h3>
+            <h2>{pid}</h2>
+
+            <button className="blue-button" onClick={() => {checkProcess_handle(pid);
+            }}></button>
+          </>
+        );
+    }   
 
     const PostUI_Handle = async () => {
-        let res = await postCallback();
+        let res = await postNRRDs_cb();
+        //let res = { "process_id" : "glizy"};
 
-        console.log(typeof res);
-        console.log(res);
-        if(typeof res === "string") { //! Indication of Error
-        setPostResp( 
-              <>
-                <h3>[ CTIMS-Web-Interface Request ERROR ]</h3>
-                <p>{res}</p>
-              </>
-        );
-        return;
+        if(typeof res === "object") {
+            set_JSX_Renderer( processCreatedJSX(res.process_id) );
+            return;
         }
-        
-        if(typeof res === "number") {
-            setPostResp( 
-                <>
-                  <h3>[ CTIMS-Web-Interface Success ] {res}</h3>
-                </>
-          );
+    }
 
-          onClose();
+    //! Handles the Action of Checking a backend Process, and if it's done, get the .NRRD mask from the API
+
+    const checkProcess_handle = async (pid) => { //process ID -> pid
+        let checkStat = await checkNRRDproc_cb(pid);
+
+        if(checkStat.status === 1) { // If Process is complete, let's load it in
+            getNRRDmask_cb(checkStat.process_id); //RETURNED F_PATH, TODO: CHANGE THE NAME ITS BAD LOL
+        } else {
+            
         }
-        
+        console.log(checkStat)
     }
 
     const genPostButton = () => {
@@ -64,8 +75,9 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
                     <TimeCounter start={true}/>
                 </>;
 
+                set_JSX_Renderer(loader);
                 PostUI_Handle();
-                setPostResp(loader);
+
             }}>
                 POST Inspection Request to Gateway
             </button>
@@ -125,7 +137,7 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postCallback}) => {
             <div className="modal-content">
             <button className="close-button" onClick={onClose}>Close</button>
             <h2 style={{color : 'darkslategray'}}>Inspection Request: </h2>
-                {inspectionRender(postResp)}
+                {inspectionRender(JSX_State_Render)}
             </div>
     
     </div>);
