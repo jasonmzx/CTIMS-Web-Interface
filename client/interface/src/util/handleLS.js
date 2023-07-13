@@ -1,7 +1,8 @@
 
 
-const LS_GATEWAY_KEY = "gateway";
-const LS_SAVED_COORDS_KEY = "coords";
+export const LS_GATEWAY_KEY = "gateway";
+export const LS_SAVED_COORDS_KEY = "coords";
+export const LS_ANNO_CAPTURE_STATUS = "capture_status";
 
 export function   getLSvarName(){ return LS_GATEWAY_KEY};
 
@@ -102,6 +103,14 @@ export function setLocalStorageVariable(variableName, value) {
 
       // Save the coords object to local storage
       setLocalStorageVariable(LS_SAVED_COORDS_KEY, JSON.stringify(coordsObject));
+    } //TODO: REMOVE HTIS FN and use generalized setLS fn
+
+    export function setLSObject(key,obj) {
+      if (typeof obj !== 'object' || obj === null) {
+        throw new Error('Invalid input: coordsObject must be a non-null object');
+    }
+
+    setLocalStorageVariable(key, JSON.stringify(obj));
     }
 
 //chatgpt: Added all these LS wrappers for coords (with Proper assertions)
