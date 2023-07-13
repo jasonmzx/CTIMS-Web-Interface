@@ -27,11 +27,11 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
     const processCreatedJSX = (pid) => {
         return (
             <>
-            <h3>[ CTIMS-Web-Interface Process CREATED ]</h3>
+            <h3>CTIMS-Web-Interface Process CREATED</h3>
             <h2>{pid}</h2>
 
             <button className="blue-button" onClick={() => {checkProcess_handle(pid);
-            }}></button>
+            }}>GET & LOAD Defect Mask</button>
           </>
         );
     }   

@@ -106,6 +106,11 @@ const Interface = () => {
 
     const PostNRRDsProc = async () => {
 
+        //CLEAR ANY Annotation Capture Status
+
+        //CLEAR ANY Defined Annotations
+        //TODO:
+
         //setAPN will set API mask resp:
 
         let resp = await POST_2_NRRDs_Begin_Process(formData);
@@ -113,6 +118,9 @@ const Interface = () => {
     }
 
     const getMASKfile = async (Process_ID_String) => {
+
+        setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1":false,"p2":false});
+
         let resp = await GET_MASK_From_Process(Process_ID_String, setAPN);
         console.log("MASK APN SET");
     }
@@ -217,6 +225,21 @@ const Interface = () => {
     }
 
 
+    function remove_scene_ObjectById(scene, id) {
+        const objectToRemove = scene.children.find(obj => obj.userData.id === id);
+        if (objectToRemove) {
+            // Remove the object from the scene
+            scene.remove(objectToRemove);
+            // Dispose of the object's geometry and material to free up memory
+            if (objectToRemove.geometry) {
+                objectToRemove.geometry.dispose();
+            }
+            if (objectToRemove.material) {
+                objectToRemove.material.dispose();
+            }
+        }
+    }
+
     const createCone = (X,Y,Z, coneId, hexColor) => {
         const cone = new THREE.Mesh(
             new THREE.ConeGeometry(5, 20, 32),
@@ -262,7 +285,7 @@ const Interface = () => {
                     const objectId = intersects[0].object.userData.id;
 
                     
-                    if(objectId) {
+                    if(objectId && objectId !== "select_box") {
 
                         //! THREE: Delete MESH Cone 
                         const clickedCone = intersects[0].object;
@@ -275,6 +298,10 @@ const Interface = () => {
                         captureStatus[objectId] = false;
                         console.log(captureStatus);
                         setLSObject(LS_ANNO_CAPTURE_STATUS,captureStatus);
+                        
+                        //DEBUG: UID SCENE CHECK:
+                        remove_scene_ObjectById(scene, "select_box");
+
 
                     } else {
                         console.log("Nothing was selected...");
@@ -467,7 +494,6 @@ const Interface = () => {
 
                     const keyStr = ">> "+key;
 
-                    //TODO: Set the xyz key
                     GUI_POI
                     .add(poiControlsGUI, "setStar")
                     .name(keyStr)
@@ -515,7 +541,7 @@ const Interface = () => {
 
                         // If p1 is False, capture it:
                         if(!cS["p1"]){
-                            cS["p1"] = true;
+                            cS["p1"] = [X,Y,Z];
                             setLSObject(LS_ANNO_CAPTURE_STATUS, cS);
 
                             createCone(X,Y,Z, "p1", 0xffff00);
@@ -523,17 +549,45 @@ const Interface = () => {
 
                         // If p2 is False, capture it:
                         else if(!cS["p2"]){
-                            cS["p2"] = true;
+                            cS["p2"] = [X,Y,Z];
                             setLSObject(LS_ANNO_CAPTURE_STATUS, cS);
 
                             createCone(X,Y,Z, "p2", 0x4d32f0);
+
+                        } 
+
+
+                        //Check again...
+
+                        if(cS["p1"] && cS["p2"]) {
+                                const X1 = cS["p1"][0];         const Y1 = cS["p1"][1];         const Z1 = cS["p1"][2];
+                                const X2 = cS["p2"][0];         const Y2 = cS["p2"][1];         const Z2 = cS["p2"][2];
+                        
+                                                    // Create geometry of the box
+                        const geometry = new THREE.BoxGeometry(X2 - X1, Y2 - Y1, Z2 - Z1);
+
+                        // Create a yellow, semi-transparent material
+                        const material = new THREE.MeshBasicMaterial({
+                            color: 0xffff00,
+                            opacity: 0.5,
+                            transparent: true,
+                        });
+
+                        // Combine geometry and material to create a mesh
+                        const box = new THREE.Mesh(geometry, material);
+
+                        // Set the box's position so that it spans from (X1, Y1, Z1) to (X2, Y2, Z2)
+                        box.position.set((X1 + X2) / 2, (Y1 + Y2) / 2, (Z1 + Z2) / 2);
+                        box.userData.id = "select_box"
+                        // Add the box to the scene
+                        scene.add(box);
                         }
 
                         console.log(cS);
 
                     } else { //! Initialize Capture Status:
 
-                        const anoStat =  {"p1" : true , "p2" : false};
+                        const anoStat =  {"p1" : [X,Y,Z] , "p2" : null}; //Set P1 first, naturely
 
                         setLSObject(LS_ANNO_CAPTURE_STATUS, anoStat);
                         
@@ -571,6 +625,9 @@ const Interface = () => {
 
                 } //? ENDOF Capture_point
             }
+
+
+            //If both points are there, create bounding box
 
             const GUI_ANNO_VIEW = gui.addFolder('Annotations');
             GUI_ANNO_VIEW.add(annotationControlsGUI, "capture_point").name("Capture Point");
