@@ -1,13 +1,14 @@
+//Main libs
+
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
-//Three Example JSM Loaders:
+//Three Example JSM Ressources that made this Project Possible:
 
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import { NRRDLoader } from 'three/examples/jsm/loaders/NRRDLoader';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
-
 
 //React libs
 import { GUI } from 'lil-gui';
@@ -187,7 +188,12 @@ const Interface = () => {
     //* >> THREE Helpers
     //* ========== ========== ========== ========== ==========
 
-    let textMesh; //Mesh Variable for Text Renderings
+    let textMeshes = [];
+
+    const addTextMesh = (textMesh) => {
+        textMeshes.push(textMesh);
+    };
+    
 
     function createBoundingBox(volume) {
         const boxGeometry = new THREE.BoxBufferGeometry(volume.xLength, volume.yLength, volume.zLength);
@@ -225,7 +231,7 @@ const Interface = () => {
     }
 
 
-    function remove_scene_ObjectById(scene, id) {
+    const removeSceneObject_ById = (scene, id) => {
         const objectToRemove = scene.children.find(obj => obj.userData.id === id);
         if (objectToRemove) {
             // Remove the object from the scene
@@ -257,6 +263,40 @@ const Interface = () => {
         return cone;
     }
 
+    const addTextMesh_withId = (X,Y,Z, textStr, id) => {
+
+            let textMesh; //Mesh Variable for Text Renderings
+            const loader = new FontLoader();
+
+            loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+                const textGeometry = new TextGeometry(textStr, {
+                    font: font,
+                    size: 10,  // size of the text
+                    height: 1,  // how much extrusion (how thick / deep are the letters)
+                });
+
+                // Create a basic material for the text with a color
+                const textMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
+
+                // Create mesh with the geometry and material
+                textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+                // Position the text over the cone. Adjust as necessary.
+                textMesh.position.set(X, Y + 30, Z);  // we set Y + 10 to position it above the cone
+                id = id += "_label";
+
+                textMesh.userData.id = id;
+
+                // Add the text to the scene
+                addTextMesh(textMesh);
+                scene.add(textMesh);
+                
+            });
+    }
+
+
+
+
         //! ########################## THREE.js Setup ##########################
 
         // Scene, camera, and renderer setup
@@ -268,6 +308,18 @@ const Interface = () => {
         //!RAYCASTER
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
+
+        const PointDeleteWrapper = (objectId) => {
+                removeSceneObject_ById(scene, objectId);
+                removeSceneObject_ById(scene, objectId+"_label");
+                removeSceneObject_ById(scene, "select_box");
+
+                //! LS : update capture Status
+                let captureStatus = JSON.parse(getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS));
+                captureStatus[objectId] = false;
+                console.log(captureStatus);
+                setLSObject(LS_ANNO_CAPTURE_STATUS,captureStatus);                
+        }
 
             // Create a click event listener
             window.addEventListener('click', function(event) {
@@ -283,30 +335,12 @@ const Interface = () => {
                     // Log the ID of the intersected cone
                     
                     const objectId = intersects[0].object.userData.id;
-
-                    
                     if(objectId && objectId !== "select_box") {
-
-                        //! THREE: Delete MESH Cone 
-                        const clickedCone = intersects[0].object;
-                        scene.remove(clickedCone);
-                        clickedCone.geometry.dispose();
-                        clickedCone.material.dispose();
-
-                        //! LS : update capture Status
-                        let captureStatus = JSON.parse(getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS));
-                        captureStatus[objectId] = false;
-                        console.log(captureStatus);
-                        setLSObject(LS_ANNO_CAPTURE_STATUS,captureStatus);
-                        
-                        //DEBUG: UID SCENE CHECK:
-                        remove_scene_ObjectById(scene, "select_box");
-
-
+                        PointDeleteWrapper(objectId);
+        
                     } else {
                         console.log("Nothing was selected...");
                     }
-                    
                 }
             }, false);
 
@@ -543,19 +577,17 @@ const Interface = () => {
                         if(!cS["p1"]){
                             cS["p1"] = [X,Y,Z];
                             setLSObject(LS_ANNO_CAPTURE_STATUS, cS);
-
                             createCone(X,Y,Z, "p1", 0xffff00);
+                            addTextMesh_withId(X,Y,Z,"Point 1", "p1"); //Add corresponding Billboard Label
                         }
 
                         // If p2 is False, capture it:
                         else if(!cS["p2"]){
                             cS["p2"] = [X,Y,Z];
                             setLSObject(LS_ANNO_CAPTURE_STATUS, cS);
-
                             createCone(X,Y,Z, "p2", 0x4d32f0);
-
+                            addTextMesh_withId(X,Y,Z,"Point 2", "p2");//Add corresponding Billboard Label
                         } 
-
 
                         //Check again...
 
@@ -595,35 +627,10 @@ const Interface = () => {
                     }
 
 
+                }, //? ENDOF Capture_point
 
-                        //!!XXXX TECXT LOADER
-            // First, you need to load a font. You can download this from the three.js examples/fonts directory.
-            // This should be done at the start of your program.
-            const loader = new FontLoader();
-
-            loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
-                // Create geometry of the text
-                const textGeometry = new TextGeometry('Point 1', {
-                    font: font,
-                    size: 10,  // size of the text
-                    height: 1,  // how much extrusion (how thick / deep are the letters)
-                });
-
-                // Create a basic material for the text with a color
-                const textMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
-
-                // Create mesh with the geometry and material
-                textMesh = new THREE.Mesh(textGeometry, textMaterial);
-
-                // Position the text over the cone. Adjust as necessary.
-                textMesh.position.set(X, Y + 30, Z);  // we set Y + 10 to position it above the cone
-
-                // Add the text to the scene
-                scene.add(textMesh);
-            });
-                        //!!XXXX
-
-                } //? ENDOF Capture_point
+                delete_p1 : function () { PointDeleteWrapper("p1"); },
+                delete_p2 : function () { PointDeleteWrapper("p2"); }
             }
 
 
@@ -631,6 +638,8 @@ const Interface = () => {
 
             const GUI_ANNO_VIEW = gui.addFolder('Annotations');
             GUI_ANNO_VIEW.add(annotationControlsGUI, "capture_point").name("Capture Point");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p1").name("DELETE 🗙 Point 1");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point 2");
 
         } //! ENDOF SETUP FUNCTION
 
@@ -638,8 +647,11 @@ const Interface = () => {
 
             requestAnimationFrame(animate);
 
-            //"Billboarding effect for Text Rendered in 3D scene"
-            if (textMesh) textMesh.lookAt(camera.position);
+            // "Billboarding effect for Text Rendered in 3D scene"
+            textMeshes.forEach((textMesh) => {
+                if (textMesh) textMesh.lookAt(camera.position);
+            });
+
 
             // Orbit Controls update
             controls.update();
