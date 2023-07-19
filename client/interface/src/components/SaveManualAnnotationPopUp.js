@@ -1,5 +1,5 @@
 import React from 'react'
-import { getLocalStorageVariable, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS';
+import { getLocalStorageVariable, setLSObject, LS_ANNO_CAPTURE_STATUS, LS_ANNO } from '../util/handleLS';
 
 const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
     
@@ -16,6 +16,32 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
 
     const handleDefectSeverityChange = (e) => {
         setDefectSeverity(e.target.value);
+    }
+
+
+    const saveManualAnnotation_toLS = (defectName) => {
+
+        //!Assert: Check if Manual Annotation variable exists in LS
+        let manualAnnotations = getLocalStorageVariable(LS_ANNO);
+        if(!manualAnnotations) { setLSObject(LS_ANNO, {}); manualAnnotations = "{}"; }
+
+        
+        
+        //Now that LS_ANNO is set forsure
+        let mA = JSON.parse(manualAnnotations);
+
+        //TODO: Assert, although it should already exist at this point, always...
+        let captureStatus = getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS);
+        let cS = JSON.parse(captureStatus);
+
+        //Add Manual Annotation Entry:
+        mA[defectName] = {
+            "p1" : cS["p1"],
+            "p2" : cS["p2"],
+            "severity" : defectSeverity
+        }
+
+        setLSObject(LS_ANNO, mA);
     }
 
     const render = () => {
@@ -52,6 +78,7 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
 
                         <button className="blue-button" onClick={() => {
                             onCloseReload();
+                            saveManualAnnotation_toLS(inputRef.current.value);
                             }}>Add Annotation</button>
                 </div>
                     </>);

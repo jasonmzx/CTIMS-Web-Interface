@@ -288,10 +288,6 @@ const Interface = () => {
 
                 textMesh.userData.id = id;
 
-                   // Ensuring that the text is always rendered last and on top
-        textMesh.renderOrder = 999;
-        textMesh.onBeforeRender = function( renderer ) { renderer.clearDepth(); };
-
                 // Add the text to the scene
                 addTextMesh(textMesh);
                 scene.add(textMesh);
