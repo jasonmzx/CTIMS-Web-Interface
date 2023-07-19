@@ -487,7 +487,7 @@ const Interface = () => {
             // Create sliders
             const GUI_VOLUMES = gui.addFolder('Volume Inspection');
             ['x', 'y', 'z'].forEach(axis => {
-                GUI_VOLUMES.add(slices1[axis], 'index', 0, volume1.RASDimensions[0], 1).name(`${axis.toUpperCase()}-axis`).onChange(() => {
+                GUI_VOLUMES.add(slices1[axis], 'index', 0, volume1.RASDimensions[0], 1).name(`${axis.toUpperCase()} - Axis`).onChange(() => {
                     slices1[axis].repaint();
                     slices2[axis].index = slices1[axis].index; // Sync the index
                     slices2[axis].repaint();
@@ -495,7 +495,7 @@ const Interface = () => {
             });
         
             // Add opacity controller
-            GUI_VOLUMES.add({ opacity: INITIAL_OPACITY_OF_DEFECT }, 'opacity', 0, 1).name('Opacity').onChange(function (value) {
+            GUI_VOLUMES.add({ opacity: INITIAL_OPACITY_OF_DEFECT }, 'opacity', 0, 1).name("👁️ Defect Mask Opacity").onChange(function (value) {
 
                 [...Object.values(slices2)].forEach(slice => {
                     slice.mesh.material.opacity = value;
@@ -535,11 +535,15 @@ const Interface = () => {
                     console.log(xP, yP, zP, xC, yC, zC);
             },
 
-            setStar : function () {} //Literally doesn't do anything, placeholder for Dynamic coord setter fns
+            manage_poi : function () {
+
+            },
+
+            empty : function () {} //Literally doesn't do anything, placeholder for Dynamic coord setter fns
             }
 
             const GUI_POI = gui.addFolder('Positions of Interest');
-            GUI_POI.add(poiControlsGUI, "save_coords").name("📷 Save Position 📷");
+            GUI_POI.add(poiControlsGUI, "save_coords").name("📷 Save Position");
 
             let allCoords = getLocalStorageVariable(LS_SAVED_COORDS_KEY);
 
@@ -553,7 +557,7 @@ const Interface = () => {
                     const keyStr = ">> "+key;
 
                     GUI_POI
-                    .add(poiControlsGUI, "setStar")
+                    .add(poiControlsGUI, "empty")
                     .name(keyStr)
                     .onChange(() => {
 
@@ -568,14 +572,16 @@ const Interface = () => {
                     // Print the key and its corresponding array
                     console.log(`Key: ${key}, Value: ${JSON.stringify(allCoords[key])}`);
                 }
+                //&  Add Manage Button (If There are saved points of interest)
+                GUI_POI.add(poiControlsGUI, "manage_poi").name("⚙️Manage Positions of Interest");
             } else {
                 console.log("No coordinates found in local storage");
             }
 
             //? ################ ANNOTATION GUI #####################
 
-            const annotationControlsGUI = {
-                capture_point : function () {
+        const annotationControlsGUI = {
+                save_point : function () {
 
                     //& Computed at every State:
                     const xDim = volume1.RASDimensions[0];
@@ -635,7 +641,7 @@ const Interface = () => {
 
                 delete_p1 : function () { PointDeleteWrapper("p1"); },
                 delete_p2 : function () { PointDeleteWrapper("p2"); },
-                add_annotation : function () {
+                save_annotation : function () {
 
                     //TODO: Check p1 and p2 aren't false
 
@@ -646,28 +652,29 @@ const Interface = () => {
                         incrementCount(); }}
                         />
                     )
-                },
-
-                empty : true//Empty fn 
-            }
+                }
+        }
 
 
             //If both points are there, create bounding box
 
             const GUI_ANNO_VIEW = gui.addFolder('Annotations');
-            GUI_ANNO_VIEW.add(annotationControlsGUI, "capture_point").name("Capture Point");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "save_point").name("📷 Save Point");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p1").name("DELETE 🗙 Point 1");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point 2");
-            GUI_ANNO_VIEW.add(annotationControlsGUI, "add_annotation").name("Save Capture");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "save_annotation").name("Saved This Annotation");
 
             //Saved Annotation Toggles
-
-            const GUI_SAVED_ANNO_VIEW = gui.addFolder("Saved Annotations");
+            const GUI_SAVED_ANNO_VIEW = gui.addFolder("Saved Manual Annotations");
 
             let savedAnnos_str = getLocalStorageVariable(LS_ANNO);
             let sA = JSON.parse(savedAnnos_str);
 
-            let savedAnnos_GUI = {} // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
+            let savedAnnos_GUI = {
+              manage_saved_annos : function () {
+
+              }  
+            } // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
 
         if(sA) {
             for(const annotation of Object.keys(sA)) {
@@ -690,12 +697,71 @@ const Interface = () => {
                     }
                 }); 
             }
-        }
 
+            //&  Add Manage Button (If There are saved annotations)
+            GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "manage_saved_annos").name("⚙️Manage Saved Annotations");
+        }
+      
+    //* ========== ========== ========== ========== ==========
+    //* >> MENU STYLINGS: (lil-gui Javascript CSS injection)
+    //* ========== ========== ========== ========== ==========  
+    
+                //* ========== ========== ========== ========== ==========
+                //* >> 📷📷📷 SAVE BUTTONS Styling
+                //* ========== ========== ========== ========== ==========
+        let saveButtonSelectors = Array.from(document.querySelectorAll('button')).filter(el => 
+                    el.textContent === "📷 Save Point" || 
+                    el.textContent === "📷 Save Position"
+            );
+
+
+            saveButtonSelectors.forEach(div => {
+                div.style.backgroundColor = '#47ccab'; // Light gray
+                div.style.color = '#000000'; // Black
+                div.style.fontWeight = 'bold'; // Bold text
+                div.style.height = '3vh';
+            
+                // Add a hover effect
+                div.addEventListener('mouseover', function() {
+                    this.style.backgroundColor = '#f50ce5'; // Darker gray when hovered
+                });
+            
+                // Remove the hover effect when the mouse leaves
+                div.addEventListener('mouseout', function() {
+                    this.style.backgroundColor = '#47ccab'; // Back to light gray
+                });
+            });
+
+                //* ========== ========== ========== ========== ==========
+                //* >> ⚙️⚙️⚙️ MANAGE BUTTONS Styling
+                //* ========== ========== ========== ========== ==========
+
+
+    let manageButtonSelectors = Array.from(document.querySelectorAll('button')).filter(el => 
+        el.textContent === "⚙️Manage Saved Annotations" || 
+        el.textContent === "⚙️Manage Positions of Interest"
+    );
+    
+    // Loop over each button and apply styles
+    manageButtonSelectors.forEach(div => {
+        div.style.backgroundColor = '#d3d3d3'; // Light gray
+        div.style.color = '#000000'; // Black
+        div.style.fontWeight = 'bold'; // Bold text
+        div.style.height = '2.5vh';
+    
+        // Add a hover effect
+        div.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#b4b4b4'; // Darker gray when hovered
+        });
+    
+        // Remove the hover effect when the mouse leaves
+        div.addEventListener('mouseout', function() {
+            this.style.backgroundColor = '#d3d3d3'; // Back to light gray
+        });
+    });
 } //! ENDOF SETUP FUNCTION
 
-        const animate = function () {
-
+    const animate = function () {
             requestAnimationFrame(animate);
 
             // "Billboarding effect for Text Rendered in 3D scene"
@@ -737,18 +803,21 @@ const Interface = () => {
             onClose={() => {setWelcomePopUp(<></>)}}/>);
     }, [])
 
-    return (<>
+    return (
+    <>
         {/* POP UP ELEMENTS (USUALLY DORMANT) */}
+        
         {welcomePopUp}
         {sessionPopUp}
         {inspectionReqPopUp}
-
         {saveCoordsPopUp}
         {saveManualAnnoPopUp}
 
         {/*Actual UI of Interface+ */}
-      {warningHeader}
+
+        {warningHeader}
         <div ref={mount} style={{width: '100%', height: '100vh'}} />
-        </>);
+    </>
+    );
 }
 export default Interface;

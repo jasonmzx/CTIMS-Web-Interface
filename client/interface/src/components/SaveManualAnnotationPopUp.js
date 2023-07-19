@@ -42,6 +42,10 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
         }
 
         setLSObject(LS_ANNO, mA);
+        
+        //Now that the Annotation is saved, clear the captureStatus:
+
+        setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1" : false , "p2" : false});
     }
 
     const render = () => {
