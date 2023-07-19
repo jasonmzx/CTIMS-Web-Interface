@@ -21,7 +21,7 @@ import WelcomePopUp from './WelcomePopUp';
 import SaveCoordsPopUp from './SaveCoordsPopUp';
 import SaveManualAnnotationPopUp from './SaveManualAnnotationPopUp';
 
-import { getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
+import { LS_ANNO, getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
 import { LS_SAVED_COORDS_KEY, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS'; //Constants
 
 const Interface = () => {
@@ -191,12 +191,7 @@ const Interface = () => {
 
     let textMeshes = [];
 
-    const addTextMesh = (textMesh) => {
-        textMeshes.push(textMesh);
-    };
-    
-
-    function createBoundingBox(volume) {
+    const createBoundingBox = (volume) => {
         const boxGeometry = new THREE.BoxBufferGeometry(volume.xLength, volume.yLength, volume.zLength);
         const boxMaterial = new THREE.MeshBasicMaterial({
             color: 0xffff00, // Yellow color
@@ -209,11 +204,11 @@ const Interface = () => {
         return boxMesh;
     }
 
-    //? NOTE: If any sliceSetHelper axis are set to `null`, they will be unaffected
-
     const sliceSetHelper = (Xpos, Ypos, Zpos, slices) => {
+
+    //? NOTE: If any sliceSetHelper axis are set to `null`, they will be unaffected        
         
-        for(const slice of slices){
+    for(const slice of slices){
 
             //slice.x.index = Xpos;
             // slice.y.index = Ypos;
@@ -230,7 +225,6 @@ const Interface = () => {
             slice.z.repaint();
         }
     }
-
 
     const removeSceneObject_ById = (scene, id) => {
         const objectToRemove = scene.children.find(obj => obj.userData.id === id);
@@ -264,6 +258,8 @@ const Interface = () => {
         return cone;
     }
 
+    const addTextMesh = (textMesh) => {textMeshes.push(textMesh);}
+
     const addTextMesh_withId = (X,Y,Z, textStr, id) => {
 
             let textMesh; //Mesh Variable for Text Renderings
@@ -284,9 +280,9 @@ const Interface = () => {
 
                 // Position the text over the cone. Adjust as necessary.
                 textMesh.position.set(X, Y + 30, Z);  // we set Y + 10 to position it above the cone
-                id = id += "_label";
+                const textid = id += "_label";
 
-                textMesh.userData.id = id;
+                textMesh.userData.id = textid;
 
                 // Add the text to the scene
                 addTextMesh(textMesh);
@@ -295,7 +291,34 @@ const Interface = () => {
             });
     }
 
+    const create_box_from_2_pts_of_obj = (obj, boxColor, boxId, boxName) => {
+        //Takes in an object with keys "p1" and "p2" to be Arrays of 3 elms (each)
+        const X1 = obj["p1"][0];         const Y1 = obj["p1"][1];         const Z1 = obj["p1"][2];
+        const X2 = obj["p2"][0];         const Y2 = obj["p2"][1];         const Z2 = obj["p2"][2];
 
+                                    // Create geometry of the box
+        const geometry = new THREE.BoxGeometry(X2 - X1, Y2 - Y1, Z2 - Z1);
+
+        // Create a yellow, semi-transparent material
+        const material = new THREE.MeshBasicMaterial({
+            color: boxColor,
+            opacity: 0.5,
+            transparent: true,
+        });
+
+        // Combine geometry and material to create a mesh
+        const box = new THREE.Mesh(geometry, material);
+
+        // Set the box's position so that it spans from (X1, Y1, Z1) to (X2, Y2, Z2)
+        box.position.set((X1 + X2) / 2, (Y1 + Y2) / 2, (Z1 + Z2) / 2);
+        box.userData.id = boxId;
+        // Add the box to the scene
+        scene.add(box);
+
+        if(boxName){
+            addTextMesh_withId(X1,Y1,Z1, boxId,boxName); //Hook it to the box Id for when this mesh gets deleted
+        }
+    }
 
 
         //! ########################## THREE.js Setup ##########################
@@ -590,30 +613,10 @@ const Interface = () => {
                             addTextMesh_withId(X,Y,Z,"Point 2", "p2");//Add corresponding Billboard Label
                         } 
 
-                        //Check again...
+                        //Check again... gen bounding box if so
 
                         if(cS["p1"] && cS["p2"]) {
-                                const X1 = cS["p1"][0];         const Y1 = cS["p1"][1];         const Z1 = cS["p1"][2];
-                                const X2 = cS["p2"][0];         const Y2 = cS["p2"][1];         const Z2 = cS["p2"][2];
-                        
-                                                    // Create geometry of the box
-                        const geometry = new THREE.BoxGeometry(X2 - X1, Y2 - Y1, Z2 - Z1);
-
-                        // Create a yellow, semi-transparent material
-                        const material = new THREE.MeshBasicMaterial({
-                            color: 0xffff00,
-                            opacity: 0.5,
-                            transparent: true,
-                        });
-
-                        // Combine geometry and material to create a mesh
-                        const box = new THREE.Mesh(geometry, material);
-
-                        // Set the box's position so that it spans from (X1, Y1, Z1) to (X2, Y2, Z2)
-                        box.position.set((X1 + X2) / 2, (Y1 + Y2) / 2, (Z1 + Z2) / 2);
-                        box.userData.id = "select_box"
-                        // Add the box to the scene
-                        scene.add(box);
+                            create_box_from_2_pts_of_obj(cS, 0xffff00, "select_box" , null);
                         }
 
                         console.log(cS);
@@ -633,7 +636,6 @@ const Interface = () => {
                 delete_p1 : function () { PointDeleteWrapper("p1"); },
                 delete_p2 : function () { PointDeleteWrapper("p2"); },
                 add_annotation : function () {
-                    console.log("hey");
 
                     //TODO: Check p1 and p2 aren't false
 
@@ -644,7 +646,9 @@ const Interface = () => {
                         incrementCount(); }}
                         />
                     )
-                }
+                },
+
+                empty : true//Empty fn 
             }
 
 
@@ -656,7 +660,39 @@ const Interface = () => {
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point 2");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "add_annotation").name("Save Capture");
 
-        } //! ENDOF SETUP FUNCTION
+            //Saved Annotation Toggles
+
+            const GUI_SAVED_ANNO_VIEW = gui.addFolder("Saved Annotations");
+
+            let savedAnnos_str = getLocalStorageVariable(LS_ANNO);
+            let sA = JSON.parse(savedAnnos_str);
+
+            let savedAnnos_GUI = {} // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
+
+        if(sA) {
+            for(const annotation of Object.keys(sA)) {
+
+                const savedAnnotationObjectValue = sA[annotation];
+
+                //Create the Entry in lil-gui controls 
+
+                savedAnnos_GUI[annotation] = true;
+                let pointToggle = GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, annotation).name("(S) "+annotation); //Apply to Folder
+                create_box_from_2_pts_of_obj(savedAnnotationObjectValue, 0xDA7636, annotation, annotation);
+                // hook into the change event
+                pointToggle.onChange(function(value) {                //`value` is boolean
+
+                    if(value) {
+                        create_box_from_2_pts_of_obj(savedAnnotationObjectValue, 0xDA7636, annotation, annotation);
+                    } else {
+                        removeSceneObject_ById(scene, annotation);
+                        removeSceneObject_ById(scene, annotation+"_label");
+                    }
+                }); 
+            }
+        }
+
+} //! ENDOF SETUP FUNCTION
 
         const animate = function () {
 
