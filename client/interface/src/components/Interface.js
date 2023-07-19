@@ -19,6 +19,7 @@ import SessionPopUp from './SessionPopUp';
 import InspectionReqPopUp from './InspectionReqPopUp';
 import WelcomePopUp from './WelcomePopUp';
 import SaveCoordsPopUp from './SaveCoordsPopUp';
+import SaveManualAnnotationPopUp from './SaveManualAnnotationPopUp';
 
 import { getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
 import { LS_SAVED_COORDS_KEY, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS'; //Constants
@@ -41,7 +42,7 @@ const Interface = () => {
     const [inspectionReqPopUp, setInspectionReqPopUp] = React.useState(<></>);
     const [welcomePopUp, setWelcomePopUp] =  React.useState(<></>);
     const [saveCoordsPopUp,setSaveCoordsPopUp] = React.useState(<></>);
-
+    const [saveManualAnnoPopUp, setManualAnnoPopUp]  = React.useState(<></>);
     
     const [rs, setRs] = React.useState('❌');
     const [is, setIs] = React.useState('❌');
@@ -169,7 +170,7 @@ const Interface = () => {
         }
 
         // GUI setup
-        const gui = new GUI();
+        const gui = new GUI({ width: 370});
 
         //GUI File Inputs Section:
 
@@ -286,6 +287,10 @@ const Interface = () => {
                 id = id += "_label";
 
                 textMesh.userData.id = id;
+
+                   // Ensuring that the text is always rendered last and on top
+        textMesh.renderOrder = 999;
+        textMesh.onBeforeRender = function( renderer ) { renderer.clearDepth(); };
 
                 // Add the text to the scene
                 addTextMesh(textMesh);
@@ -630,7 +635,20 @@ const Interface = () => {
                 }, //? ENDOF Capture_point
 
                 delete_p1 : function () { PointDeleteWrapper("p1"); },
-                delete_p2 : function () { PointDeleteWrapper("p2"); }
+                delete_p2 : function () { PointDeleteWrapper("p2"); },
+                add_annotation : function () {
+                    console.log("hey");
+
+                    //TODO: Check p1 and p2 aren't false
+
+                    setManualAnnoPopUp(
+                        <SaveManualAnnotationPopUp 
+                        onClose={ () =>{setManualAnnoPopUp(<></>); }}
+                        onCloseReload ={ () =>{setManualAnnoPopUp(<></>);
+                        incrementCount(); }}
+                        />
+                    )
+                }
             }
 
 
@@ -640,6 +658,7 @@ const Interface = () => {
             GUI_ANNO_VIEW.add(annotationControlsGUI, "capture_point").name("Capture Point");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p1").name("DELETE 🗙 Point 1");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point 2");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "add_annotation").name("Save Capture");
 
         } //! ENDOF SETUP FUNCTION
 
@@ -691,7 +710,9 @@ const Interface = () => {
         {welcomePopUp}
         {sessionPopUp}
         {inspectionReqPopUp}
+
         {saveCoordsPopUp}
+        {saveManualAnnoPopUp}
 
         {/*Actual UI of Interface+ */}
       {warningHeader}

@@ -1,0 +1,82 @@
+import React from 'react'
+import { getLocalStorageVariable, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS';
+
+const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
+    
+    //React Ref & State hooks:
+
+    const inputRef = React.useRef(null);
+    const [defectSeverity, setDefectSeverity] = React.useState('Severe'); // default value
+
+    const handleBackgroundClick = e => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        };
+      }
+
+    const handleDefectSeverityChange = (e) => {
+        setDefectSeverity(e.target.value);
+    }
+
+    const render = () => {
+
+        //Check if `p1` and `p2` aren't null
+
+        let captureStatus = getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS);
+
+        if(captureStatus) { //Some kind of status is captured
+
+            let cS = JSON.parse(captureStatus);
+
+            if(cS["p1"] && cS["p2"]) { //* It's OK! Render the Save Menu:
+
+                return(
+                    <>
+                                    <h3>Defect Severity</h3>
+                <div onChange={handleDefectSeverityChange}>
+                    <input type="radio" value="Severe" name="defect" defaultChecked /> Severe <br/>
+                    <input type="radio" value="Mild" name="defect" /> Mild <br/>
+                    <input type="radio" value="Scratches & Noise" name="defect" /> Scratches & Noise
+                </div>
+                <br/>
+
+                    <div style={{display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'}}>
+                    
+                        <input
+                            type="url"
+                            ref={inputRef}
+                            placeholder="Give this annotation a name..."
+                        />
+
+                        <button className="blue-button" onClick={() => {
+                            onCloseReload();
+                            }}>Add Annotation</button>
+                </div>
+                    </>);
+            }
+        }
+        //Nothing happened, so tell the user CS isn't sufficient yet
+
+        return("You haven't captured 2 points yet...");
+
+    }
+
+    return (
+        <div className="modal" onClick={handleBackgroundClick}>
+    
+            {/* INSIDE THE POP UP: */}
+            <div className="modal-content">
+    
+                <button className="close-button" onClick={onClose}>Close</button>
+                <h2>Save Manual Annotation: </h2>
+                <hr/>
+                {render()}
+                  
+            </div> {/*ENDOF INSIDE THE POPUP */}
+        </div>
+      );
+}
+
+export default SaveManualAnnotationPopUp
