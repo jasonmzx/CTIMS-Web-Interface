@@ -1,12 +1,12 @@
 import React from 'react'
 import { getLocalStorageVariable, setLSObject, LS_ANNO_CAPTURE_STATUS, LS_ANNO } from '../util/handleLS';
+import {DEFECT_LIST} from '../util/constant';
 
 const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
     
     //React Ref & State hooks:
 
     const inputRef = React.useRef(null);
-    const [defectSeverity, setDefectSeverity] = React.useState('Severe'); // default value
 
     const handleBackgroundClick = e => {
         if (e.target === e.currentTarget) {
@@ -14,9 +14,6 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
         };
       }
 
-    const handleDefectSeverityChange = (e) => {
-        setDefectSeverity(e.target.value);
-    }
 
 
     const saveManualAnnotation_toLS = (defectName) => {
@@ -25,8 +22,6 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
         let manualAnnotations = getLocalStorageVariable(LS_ANNO);
         if(!manualAnnotations) { setLSObject(LS_ANNO, {}); manualAnnotations = "{}"; }
 
-        
-        
         //Now that LS_ANNO is set forsure
         let mA = JSON.parse(manualAnnotations);
 
@@ -34,11 +29,20 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
         let captureStatus = getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS);
         let cS = JSON.parse(captureStatus);
 
+        //! DOM HOOKINS since React State is buggy
+        let dS = "";
+        for(const i in DEFECT_LIST) {
+            let defect = DEFECT_LIST[i];
+            if(document.getElementById(defect).checked === true) {
+                dS = defect;
+            }
+        }
+
         //Add Manual Annotation Entry:
         mA[defectName] = {
             "p1" : cS["p1"],
             "p2" : cS["p2"],
-            "severity" : defectSeverity
+            "severity" : dS
         }
 
         setLSObject(LS_ANNO, mA);
@@ -46,6 +50,18 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
         //Now that the Annotation is saved, clear the captureStatus:
 
         setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1" : false , "p2" : false});
+    }
+
+    const genDefects = () => {
+        let defectList = [];
+        for(const i in DEFECT_LIST) {
+            let defect = DEFECT_LIST[i];
+
+            defectList.push(
+                <><input type="radio" value={defect} id={defect}/> {defect} <br/></>
+            )
+        }
+        return defectList;
     }
 
     const render = () => {
@@ -62,11 +78,9 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
 
                 return(
                     <>
-                                    <h3>Defect Severity</h3>
-                <div onChange={handleDefectSeverityChange}>
-                    <input type="radio" value="Severe" name="defect" defaultChecked /> Severe <br/>
-                    <input type="radio" value="Mild" name="defect" /> Mild <br/>
-                    <input type="radio" value="Scratches & Noise" name="defect" /> Scratches & Noise
+                    <h3>Defect Severity</h3>
+                <div>
+                    {genDefects()}
                 </div>
                 <br/>
 

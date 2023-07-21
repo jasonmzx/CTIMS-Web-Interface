@@ -696,6 +696,10 @@ const Interface = () => {
               }  
             } // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
 
+        //* ========== ========== ========== ========== ==========
+        //* >> TOGGLING OF SAVED MANUAL ANNOTATIONS
+        //* ========== ========== ========== ========== ==========    
+
         if(sA) { //Saved Annotations 
             for(const annotation of Object.keys(sA)) {
 
@@ -708,6 +712,8 @@ const Interface = () => {
                 create_box_from_2_pts_of_obj(savedAnnotationObjectValue, 0xDA7636, annotation, annotation);
                 // hook into the change event
                 pointToggle.onChange(function(value) {                //`value` is boolean
+
+                    
 
                     if(value) {
                         create_box_from_2_pts_of_obj(savedAnnotationObjectValue, 0xDA7636, annotation, annotation);
