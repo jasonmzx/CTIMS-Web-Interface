@@ -198,20 +198,7 @@ const Interface = () => {
     //* ========== ========== ========== ========== ==========
 
     let textMeshes = [];
-
-    const createBoundingBox = (volume) => {
-        const boxGeometry = new THREE.BoxBufferGeometry(volume.xLength, volume.yLength, volume.zLength);
-        const boxMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffff00, // Yellow color
-            wireframe: true
-        });
-    
-        const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-        boxMesh.visible = false; // Initially not visible
-    
-        return boxMesh;
-    }
-
+    const ThreeFontLoader = new FontLoader();
     const sliceSetHelper = (Xpos, Ypos, Zpos, slices) => {
 
     //? NOTE: If any sliceSetHelper axis are set to `null`, they will be unaffected        
@@ -271,9 +258,8 @@ const Interface = () => {
     const addTextMesh_withId = (X,Y,Z, textStr, id, color) => {
 
             let textMesh; //Mesh Variable for Text Renderings
-            const loader = new FontLoader();
 
-            loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+            ThreeFontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
                 const textGeometry = new TextGeometry(textStr, {
                     font: font,
                     size: 10,  // size of the text
@@ -289,6 +275,10 @@ const Interface = () => {
 
                 // Create mesh with the geometry and material
                 textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+                //! ALWAYS ON TOP breaks....
+                // textMesh.renderOrder = 1000;  // Make Text Meshes, always on top
+                // textMesh.material.depthTest = false;
 
                 // Position the text over the cone. Adjust as necessary.
                 textMesh.position.set(X, Y + 30, Z);  // we set Y + 10 to position it above the cone
@@ -426,9 +416,6 @@ const Interface = () => {
         //& Load and add first volume to the scene
         loader1.load(referenceNRRD, function (volume) {
             volume1 = volume;
-
-            volume1.boundingBox = createBoundingBox(volume1);
-            scene.add(volume1.boundingBox);
             setupGui(); // Try to setup the GUI after each volume loads
         });
 
@@ -500,7 +487,8 @@ const Interface = () => {
                     camera.position.set(0, 0, 500); // adjust as necessary
                     camera.lookAt(scene.position);
                     sliceSetHelper(0,700,fixPOS,[slices1, slices2]);
-                }
+                }, 
+                emptyBool : false
             };
 
             //Add Yellow Bounding box to scene
@@ -509,9 +497,48 @@ const Interface = () => {
             const GUI_VOLUMES = gui.addFolder('Volume Inspection');
             ['x', 'y', 'z'].forEach(axis => {
                 GUI_VOLUMES.add(slices1[axis], 'index', 0, volume1.RASDimensions[0], 1).name(`${axis.toUpperCase()} - Axis`).onChange(() => {
-                    slices1[axis].repaint();
+
                     slices2[axis].index = slices1[axis].index; // Sync the index
+
+                    slices1[axis].repaint();
                     slices2[axis].repaint();
+                    
+
+
+                    // For Cursor:
+                    const xDim = volume1.RASDimensions[0];
+                    const yDim = volume1.RASDimensions[1];
+                    const zDim = volume1.RASDimensions[2];
+
+                    const X = slices1.x.index - xDim/2;
+                    const Y = slices1.y.index - yDim/2;
+                    const Z = slices1.z.index - zDim/2;
+
+                    const cursorObject = scene.children.find(obj => obj.userData.id === "cursor");
+                    if (cursorObject) {
+                        cursorObject.position.set(X,Y,Z);
+                    }
+
+                    const cursorTextObject = scene.children.find(obj => obj.userData.id === "cursor_label");
+                    if (cursorTextObject) {
+                        cursorTextObject.position.set(X+20,Y+30,Z+20);
+                        let newPosStr = `P : ( ${X} , ${Y} , ${Z} )`;  // replace with your new text
+                        
+                        ThreeFontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+                            const newTextGeometry = new TextGeometry(newPosStr, {
+                                font: font,
+                                size: 10,  // size of the text
+                                height: 1,  // how much extrusion (how thick / deep are the letters)
+                        });
+
+                            // dispose of old geometry
+                            cursorTextObject.geometry.dispose();
+                            // replace with new geometry
+                            cursorTextObject.geometry = newTextGeometry;
+
+                        });
+                    }
+
                 });
             });
         
@@ -525,7 +552,43 @@ const Interface = () => {
                 });
             });
 
-            GUI_VOLUMES.add(volume1.boundingBox, 'visible').name('Toggle Contour Box');
+            let cursorToggle = GUI_VOLUMES.add(volumeControlGUI, 'emptyBool').name('🎯 Toggle Cursor');
+
+            cursorToggle.onChange(function(value) {
+                console.log("CURSOR >> " + value);
+
+                if(value){
+
+                    const xDim = volume1.RASDimensions[0];
+                    const yDim = volume1.RASDimensions[1];
+                    const zDim = volume1.RASDimensions[2];
+
+                    const X = slices1.x.index - xDim/2;
+                    const Y = slices1.y.index - yDim/2;
+                    const Z = slices1.z.index - zDim/2;
+
+                    // Create sphere geometry.
+                    var geometry = new THREE.SphereGeometry(5, 32, 32); // Adjust size as needed.
+
+                    // Create material for the sphere.
+                    var material = new THREE.MeshBasicMaterial({color: 0xff0000}); // Red color.
+
+                    // Create sphere mesh.
+                    var sphere = new THREE.Mesh(geometry, material);
+
+                    sphere.userData.id = "cursor";
+
+                    // Set sphere position.
+                    sphere.position.set(X, Y, Z); // Replace X, Y, Z with your desired coordinates.
+                    scene.add(sphere);
+
+                    //Add Title to the Sphere:
+                    addTextMesh_withId(X+20,Y,Z+20, "Cursor", "cursor", null);
+                } else {
+                    removeSceneObject_ById(scene,"cursor");
+                    removeSceneObject_ById(scene, "cursor_label");
+                }
+            }) 
 
             GUI_VOLUMES.add(volumeControlGUI, 'setX').name('Camera to X');
             GUI_VOLUMES.add(volumeControlGUI, 'setY').name('Camera to Y');
@@ -690,7 +753,7 @@ const Interface = () => {
             GUI_ANNO_VIEW.add(annotationControlsGUI, "save_point").name("📷 Save Point");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p1").name("DELETE 🗙 Point 1");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point 2");
-            GUI_ANNO_VIEW.add(annotationControlsGUI, "save_annotation").name("Saved This Annotation");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "save_annotation").name("Save This Annotation");
 
             //Saved Annotation Toggles
             const GUI_SAVED_ANNO_VIEW = gui.addFolder("Saved Manual Annotations");
