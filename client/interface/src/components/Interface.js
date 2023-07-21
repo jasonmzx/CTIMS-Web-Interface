@@ -27,6 +27,7 @@ import ManageFeaturePopUp from './ManageFeaturePopUp';
 
 import { LS_ANNO, getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
 import { LS_SAVED_COORDS_KEY, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS'; //Constants
+import { DEFECT_COLORS, DEFECT_COLORS_TEXT, DEFECT_LIST } from '../util/constant';
 
 const Interface = () => {
 
@@ -267,7 +268,7 @@ const Interface = () => {
 
     const addTextMesh = (textMesh) => {textMeshes.push(textMesh);}
 
-    const addTextMesh_withId = (X,Y,Z, textStr, id) => {
+    const addTextMesh_withId = (X,Y,Z, textStr, id, color) => {
 
             let textMesh; //Mesh Variable for Text Renderings
             const loader = new FontLoader();
@@ -279,8 +280,12 @@ const Interface = () => {
                     height: 1,  // how much extrusion (how thick / deep are the letters)
                 });
 
-                // Create a basic material for the text with a color
-                const textMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
+                let textMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
+
+                if(color) { //If color is passed thru, set it
+                    textMaterial = new THREE.MeshBasicMaterial({color});
+                }
+
 
                 // Create mesh with the geometry and material
                 textMesh = new THREE.Mesh(textGeometry, textMaterial);
@@ -299,6 +304,15 @@ const Interface = () => {
     }
 
     const create_box_from_2_pts_of_obj = (obj, boxColor, boxId, boxName) => {
+        
+        const severity = obj["severity"];
+        const idx = DEFECT_LIST.indexOf(severity);
+
+        //If a boxColor isn't defined, assume it's a Saved Defect
+        if(!boxColor) {
+            boxColor = DEFECT_COLORS[idx];
+        }
+
         //Takes in an object with keys "p1" and "p2" to be Arrays of 3 elms (each)
         const X1 = obj["p1"][0];         const Y1 = obj["p1"][1];         const Z1 = obj["p1"][2];
         const X2 = obj["p2"][0];         const Y2 = obj["p2"][1];         const Z2 = obj["p2"][2];
@@ -323,7 +337,7 @@ const Interface = () => {
         scene.add(box);
 
         if(boxName){
-            addTextMesh_withId(X1,Y1,Z1, boxId,boxName); //Hook it to the box Id for when this mesh gets deleted
+            addTextMesh_withId(X1,Y1,Z1, boxId,boxName, DEFECT_COLORS_TEXT[idx] ); //Hook it to the box Id for when this mesh gets deleted
         }
     }
 
@@ -709,14 +723,12 @@ const Interface = () => {
 
                 savedAnnos_GUI[annotation] = true;
                 let pointToggle = GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, annotation).name("(S) "+annotation); //Apply to Folder
-                create_box_from_2_pts_of_obj(savedAnnotationObjectValue, 0xDA7636, annotation, annotation);
+                create_box_from_2_pts_of_obj(savedAnnotationObjectValue, null, annotation, annotation);
                 // hook into the change event
                 pointToggle.onChange(function(value) {                //`value` is boolean
 
-                    
-
                     if(value) {
-                        create_box_from_2_pts_of_obj(savedAnnotationObjectValue, 0xDA7636, annotation, annotation);
+                        create_box_from_2_pts_of_obj(savedAnnotationObjectValue, null, annotation, annotation);
                     } else {
                         removeSceneObject_ById(scene, annotation);
                         removeSceneObject_ById(scene, annotation+"_label");

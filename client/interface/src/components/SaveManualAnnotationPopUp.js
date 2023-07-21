@@ -108,8 +108,7 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
 
     }
 
-    return (
-        <div className="modal" onClick={handleBackgroundClick}>
+    return (<div className="modal" onClick={handleBackgroundClick}>
     
             {/* INSIDE THE POP UP: */}
             <div className="modal-content">
