@@ -116,8 +116,6 @@ const Interface = () => {
 
     const PostNRRDsProc = async () => {
 
-        //CLEAR ANY Annotation Capture Status
-
         //CLEAR ANY Defined Annotations
         //TODO:
 
@@ -370,7 +368,11 @@ const Interface = () => {
                     // Log the ID of the intersected cone
                     
                     const objectId = intersects[0].object.userData.id;
-                    if(objectId && objectId !== "select_box") {
+
+
+                    if(objectId && 
+                        (objectId === "p1" || objectId === "p2") //Specific Meshes CAN be delete via Click
+                    ) {
                         PointDeleteWrapper(objectId);
         
                     } else {
@@ -740,6 +742,7 @@ const Interface = () => {
                         onClose={ () =>{setManualAnnoPopUp(<></>); }}
                         onCloseReload ={ () =>{setManualAnnoPopUp(<></>);
                         incrementCount(); }}
+                        volume={volume1}
                         />
                     )
                 }

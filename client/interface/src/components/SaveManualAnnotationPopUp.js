@@ -2,8 +2,13 @@ import React from 'react'
 import { getLocalStorageVariable, setLSObject, LS_ANNO_CAPTURE_STATUS, LS_ANNO } from '../util/handleLS';
 import {DEFECT_LIST} from '../util/constant';
 
-const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
+const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
     
+
+    const xDim = volume.RASDimensions[0];
+    const yDim = volume.RASDimensions[1];
+    const zDim = volume.RASDimensions[2];
+
     //React Ref & State hooks:
 
     const inputRef = React.useRef(null);
@@ -12,8 +17,18 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
         if (e.target === e.currentTarget) {
             onClose();
         };
-      }
+    }
 
+      const unNormalizePoints = (array) => {
+        if (array.length < 3) {
+            throw new Error("Array must have at least 3 elements.");
+        }
+        array[0] += xDim/2;
+        array[1] += yDim/2;
+        array[2] += zDim/2;
+    
+        return array;
+    }      
 
 
     const saveManualAnnotation_toLS = (defectName) => {
@@ -41,7 +56,9 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload}) => {
         //Add Manual Annotation Entry:
         mA[defectName] = {
             "p1" : cS["p1"],
+            "p1_un" : unNormalizePoints([...cS["p1"]]),
             "p2" : cS["p2"],
+            "p2_un" : unNormalizePoints([...cS["p2"]]),
             "severity" : dS
         }
 
