@@ -522,7 +522,7 @@ const Interface = () => {
                     const cursorTextObject = scene.children.find(obj => obj.userData.id === "cursor_label");
                     if (cursorTextObject) {
                         cursorTextObject.position.set(X+20,Y+30,Z+20);
-                        let newPosStr = `P : ( ${X} , ${Y} , ${Z} )`;  // replace with your new text
+                        let newPosStr = `P: ( ${X} , ${Y} , ${Z} )`;  // replace with your new text
                         
                         ThreeFontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
                             const newTextGeometry = new TextGeometry(newPosStr, {
@@ -581,9 +581,8 @@ const Interface = () => {
                     // Set sphere position.
                     sphere.position.set(X, Y, Z); // Replace X, Y, Z with your desired coordinates.
                     scene.add(sphere);
-
                     //Add Title to the Sphere:
-                    addTextMesh_withId(X+20,Y,Z+20, "Cursor", "cursor", null);
+                    addTextMesh_withId(X+20,Y,Z+20, `P: ( ${X} , ${Y} , ${Z} ) <-- X, Y, Z Respectively...`, "cursor", null);
                 } else {
                     removeSceneObject_ById(scene,"cursor");
                     removeSceneObject_ById(scene, "cursor_label");
