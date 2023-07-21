@@ -136,7 +136,7 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
             {/* INSIDE THE POP UP: */}
             <div className="modal-content">
             <button className="close-button" onClick={onClose}>Close</button>
-            <h2 style={{color : 'darkslategray'}}>Inspection Request: </h2>
+            <h2 className="pop-up-title">Inspection Request: </h2>
                 {inspectionRender(JSX_State_Render)}
             </div>
     

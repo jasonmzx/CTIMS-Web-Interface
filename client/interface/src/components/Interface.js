@@ -15,11 +15,15 @@ import { GUI } from 'lil-gui';
 
 //Local stuff
 import { GET_MASK_From_Process, POST_2_NRRDs_Begin_Process, NRRD_Check_Process } from '../util/requests';
+
+//React Pop Up Components:
+
 import SessionPopUp from './SessionPopUp';
 import InspectionReqPopUp from './InspectionReqPopUp';
 import WelcomePopUp from './WelcomePopUp';
 import SaveCoordsPopUp from './SaveCoordsPopUp';
 import SaveManualAnnotationPopUp from './SaveManualAnnotationPopUp';
+import ManageFeaturePopUp from './ManageFeaturePopUp';
 
 import { LS_ANNO, getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
 import { LS_SAVED_COORDS_KEY, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS'; //Constants
@@ -38,11 +42,14 @@ const Interface = () => {
 
     //& POP UPS:
 
+    const [welcomePopUp, setWelcomePopUp] =  React.useState(<></>);
     const [sessionPopUp, setSessionPopUp] = React.useState(<></>);
     const [inspectionReqPopUp, setInspectionReqPopUp] = React.useState(<></>);
-    const [welcomePopUp, setWelcomePopUp] =  React.useState(<></>);
+
     const [saveCoordsPopUp,setSaveCoordsPopUp] = React.useState(<></>);
     const [saveManualAnnoPopUp, setManualAnnoPopUp]  = React.useState(<></>);
+
+    const [managePopUp, setManagePopUp] = React.useState(<></>);
     
     const [rs, setRs] = React.useState('❌');
     const [is, setIs] = React.useState('❌');
@@ -536,7 +543,13 @@ const Interface = () => {
             },
 
             manage_poi : function () {
-
+                setManagePopUp(<ManageFeaturePopUp 
+                    onClose={() =>{setManagePopUp(<></>)}}
+                    onCloseReload={() =>{setManagePopUp(<></>
+                    ); incrementCount();}}
+                    featureName={"Points of Interest"}
+                    LSFeatureRef={LS_SAVED_COORDS_KEY}
+                    />);
             },
 
             empty : function () {} //Literally doesn't do anything, placeholder for Dynamic coord setter fns
@@ -546,11 +559,10 @@ const Interface = () => {
             GUI_POI.add(poiControlsGUI, "save_coords").name("📷 Save Position");
 
             let allCoords = getLocalStorageVariable(LS_SAVED_COORDS_KEY);
+            allCoords = JSON.parse(allCoords);
 
-            // If the 'coords' object exists, parse it
             if (allCoords) {
-                allCoords = JSON.parse(allCoords);
-        
+
                 // Loop through the keys of the 'coords' object
                 for (let key in allCoords) {    
 
@@ -572,8 +584,10 @@ const Interface = () => {
                     // Print the key and its corresponding array
                     console.log(`Key: ${key}, Value: ${JSON.stringify(allCoords[key])}`);
                 }
+
                 //&  Add Manage Button (If There are saved points of interest)
                 GUI_POI.add(poiControlsGUI, "manage_poi").name("⚙️Manage Positions of Interest");
+
             } else {
                 console.log("No coordinates found in local storage");
             }
@@ -672,11 +686,17 @@ const Interface = () => {
 
             let savedAnnos_GUI = {
               manage_saved_annos : function () {
-
+                setManagePopUp(<ManageFeaturePopUp 
+                    onClose={() =>{setManagePopUp(<></>)}}
+                    onCloseReload={() =>{setManagePopUp(<></>
+                    ); incrementCount();}}
+                    featureName={"Manual Annotations"}
+                    LSFeatureRef={LS_ANNO}
+                    />);
               }  
             } // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
 
-        if(sA) {
+        if(sA) { //Saved Annotations 
             for(const annotation of Object.keys(sA)) {
 
                 const savedAnnotationObjectValue = sA[annotation];
@@ -718,6 +738,7 @@ const Interface = () => {
             saveButtonSelectors.forEach(div => {
                 div.style.backgroundColor = '#47ccab'; // Light gray
                 div.style.color = '#000000'; // Black
+                div.style.marginBottom = '1vh';
                 div.style.fontWeight = 'bold'; // Bold text
                 div.style.height = '3vh';
             
@@ -745,6 +766,7 @@ const Interface = () => {
     // Loop over each button and apply styles
     manageButtonSelectors.forEach(div => {
         div.style.backgroundColor = '#d3d3d3'; // Light gray
+        div.style.marginBottom = '1vh';
         div.style.color = '#000000'; // Black
         div.style.fontWeight = 'bold'; // Bold text
         div.style.height = '2.5vh';
@@ -812,6 +834,7 @@ const Interface = () => {
         {inspectionReqPopUp}
         {saveCoordsPopUp}
         {saveManualAnnoPopUp}
+        {managePopUp}
 
         {/*Actual UI of Interface+ */}
 

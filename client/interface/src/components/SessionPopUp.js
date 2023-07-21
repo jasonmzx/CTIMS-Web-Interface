@@ -66,7 +66,7 @@ const SessionPopUp = ({ onClose }) => {
             
 
             <button className="close-button" onClick={onClose}>Close</button>
-            <h2>Join a CTIMS Gateway Session</h2>
+            <h2 className="pop-up-title">Join a CTIMS Gateway Session</h2>
             {gatewayJSX}
             <br/>
             <div style={{display: 'flex',
