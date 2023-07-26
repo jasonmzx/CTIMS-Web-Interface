@@ -117,3 +117,41 @@ export async function PingServer() {
     return { "error": error };
   }
 }
+
+
+
+//* ========== ========== ========== ========== ==========
+//* >> FLOOD FILL TOOL REQUESTS, INTERACTIVE SEGMENTATION 
+//* ========== ========== ========== ========== ==========
+
+export async function POSTFloodFill(x,y,z,nrrdName) {
+
+  try {
+    const gatewayURL = getLocalStorageVariable(getLSvarName());
+
+    const RESPONSE = await fetch(gatewayURL+"/floodfill", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      //& #################### POST BODY HERE ####################
+        body: JSON.stringify({
+          "x": x,
+          "y": y,
+          "z": z,
+          "threshold": 0,
+          "filename": "nrrd_ressources/volume_mask.nrrd"
+        })
+      //& #################### ENDOF POST BODY HERE ####################
+    });
+
+    const jsonResp = await RESPONSE.json();
+    console.log(jsonResp);
+
+    return jsonResp;
+
+  } catch (error) {
+    return error.message;
+  }
+}
+

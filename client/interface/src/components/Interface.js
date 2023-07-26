@@ -14,7 +14,7 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { GUI } from 'lil-gui';
 
 //Local stuff
-import { GET_MASK_From_Process, POST_2_NRRDs_Begin_Process, NRRD_Check_Process } from '../util/requests';
+import { GET_MASK_From_Process, POST_2_NRRDs_Begin_Process, NRRD_Check_Process, POSTFloodFill } from '../util/requests';
 
 //React Pop Up Components:
 
@@ -772,6 +772,22 @@ const Interface = () => {
                     featureName={"Manual Annotations"}
                     LSFeatureRef={LS_ANNO}
                     />);
+              },
+              floodfill_point : function () {
+                const xDim = volume1.RASDimensions[0];
+                const yDim = volume1.RASDimensions[1];
+                const zDim = volume1.RASDimensions[2];
+
+                //This points aren't normalized, since we want the Real Coords with respect to .nrrd volume
+                const X_o = slices1.x.index;
+                const Y_o = slices1.y.index;
+                const Z_o = slices1.z.index;
+
+                console.log("#### FLOOD-FILL START POINT #####",X_o,Y_o,Z_o);
+                POSTFloodFill(X_o,Y_o,Z_o,"");
+
+                //UnNormalize
+
               }  
             } // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
 
@@ -803,6 +819,7 @@ const Interface = () => {
 
             //&  Add Manage Button (If There are saved annotations)
             GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "manage_saved_annos").name("⚙️Manage Saved Annotations");
+            GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "floodfill_point").name("FF Tool");
         }
       
     //* ========== ========== ========== ========== ==========
