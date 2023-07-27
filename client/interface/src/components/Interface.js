@@ -329,6 +329,44 @@ const Interface = () => {
         }
     }
 
+    const create_flood_fill_obj = (xDim, yDim, zDim, vertices, indices) => {
+        let normalized_vertices = [];
+    
+        for (const v3 of vertices) {
+            const X = v3[0] - xDim / 2;
+            const Y = v3[1] - yDim / 2;
+            const Z = v3[2] - zDim / 2;
+            normalized_vertices.push(new THREE.Vector3(X, Y, Z));
+        }
+    
+        // Create a geometry
+        let geometry = new THREE.BufferGeometry();
+    
+        // Create a Float32Array from the normalized_vertices array
+        let verticesArray = new Float32Array(normalized_vertices.length * 3); // three components per vertex
+    
+        for (let i = 0; i < normalized_vertices.length; i++) {
+            verticesArray[i * 3] = normalized_vertices[i].x;
+            verticesArray[i * 3 + 1] = normalized_vertices[i].y;
+            verticesArray[i * 3 + 2] = normalized_vertices[i].z;
+        }
+    
+        // Assign attributes to the geometry
+        geometry.setAttribute('position', new THREE.BufferAttribute(verticesArray, 3));
+    
+        // Create a material
+
+        let material = new THREE.PointsMaterial({ color: 0xff0000, size: 1.5, sizeAttenuation: false });
+
+        // Create a points (particle system)
+        let points = new THREE.Points(geometry, material);
+    
+        // Add the points to the scene
+        scene.add(points);
+    }
+    
+    
+
 
         //! ########################## THREE.js Setup ##########################
 
@@ -784,7 +822,7 @@ const Interface = () => {
                 const Z_o = slices1.z.index;
 
                 console.log("#### FLOOD-FILL START POINT #####",X_o,Y_o,Z_o);
-                POSTFloodFill(X_o,Y_o,Z_o,"");
+                POSTFloodFill(X_o,Y_o,Z_o,xDim,yDim,zDim,"",create_flood_fill_obj);
 
                 //UnNormalize
 

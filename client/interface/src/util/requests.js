@@ -124,7 +124,7 @@ export async function PingServer() {
 //* >> FLOOD FILL TOOL REQUESTS, INTERACTIVE SEGMENTATION 
 //* ========== ========== ========== ========== ==========
 
-export async function POSTFloodFill(x,y,z,nrrdName) {
+export async function POSTFloodFill(x,y,z, xDim, yDim, zDim, nrrdName, THREE_callback) {
 
   try {
     const gatewayURL = getLocalStorageVariable(getLSvarName());
@@ -147,6 +147,7 @@ export async function POSTFloodFill(x,y,z,nrrdName) {
 
     const jsonResp = await RESPONSE.json();
     console.log(jsonResp);
+    THREE_callback(xDim,yDim,zDim,jsonResp["vertices"], jsonResp["indices"]);
 
     return jsonResp;
 
