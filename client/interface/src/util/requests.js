@@ -155,4 +155,47 @@ export async function POSTFloodFill(x,y,z, xDim, yDim, zDim, nrrdName, scene, TH
     return error.message;
   }
 }
+//* ========== ========== ========== ========== ==========
+//* >> 2 POINT BOX FILL TOOL REQUESTS, INTERACTIVE SEGMENTATION 
+//* ========== ========== ========== ========== ==========
 
+export async function POSTBoxFill(p1, p2, xDim, yDim, zDim, nrrdName, scene, THREE_callback) {
+
+  const body = {
+    "p1": p1,
+    "p2": p2,
+    "threshold": 0,
+    "filename": "nrrd_ressources/volume_mask.nrrd"
+  }
+
+  console.log(body)
+
+
+  try {
+    const gatewayURL = getLocalStorageVariable(getLSvarName());
+
+    const RESPONSE = await fetch(gatewayURL+"/boxfill", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      //& #################### POST BODY HERE ####################
+        body: JSON.stringify({
+          "p1": p1,
+          "p2": p2,
+          "threshold": 0,
+          "filename": "nrrd_ressources/volume_mask.nrrd"
+        })
+      //& #################### ENDOF POST BODY HERE ####################
+    });
+
+    const jsonResp = await RESPONSE.json();
+    console.log(jsonResp);
+    THREE_callback(scene, xDim,yDim,zDim,jsonResp["vertices"], jsonResp["indices"]);
+
+    return jsonResp;
+
+  } catch (error) {
+    return error.message;
+  }
+}

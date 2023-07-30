@@ -182,3 +182,17 @@ export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices){
     // Add the points to the scene
     scene.add(points);
 }
+
+export const unNormalizePoints = (array, xDim, yDim, zDim) => { // returns NRRD-accurate Coords
+    if (array.length < 3) {
+        throw new Error("Array must have at least 3 elements.");
+    }
+    array[0] += xDim/2;
+    array[1] += yDim/2;
+    array[2] += zDim/2;
+
+    // Round all elements in the array to the nearest integer
+    array = array.map(element => Math.round(element));
+
+    return array;
+}

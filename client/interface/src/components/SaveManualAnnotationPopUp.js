@@ -1,6 +1,7 @@
 import React from 'react'
 import { getLocalStorageVariable, setLSObject, LS_ANNO_CAPTURE_STATUS, LS_ANNO } from '../util/handleLS';
 import {DEFECT_LIST} from '../util/constant';
+import { unNormalizePoints } from '../util/ThreeHelper';
 
 const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
     
@@ -12,23 +13,13 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
     //React Ref & State hooks:
 
     const inputRef = React.useRef(null);
+    const [isDefective,setIsDefective] = React.useState(-1);
 
     const handleBackgroundClick = e => {
         if (e.target === e.currentTarget) {
             onClose();
         };
     }
-
-      const unNormalizePoints = (array) => {
-        if (array.length < 3) {
-            throw new Error("Array must have at least 3 elements.");
-        }
-        array[0] += xDim/2;
-        array[1] += yDim/2;
-        array[2] += zDim/2;
-    
-        return array;
-    }      
 
 
     const saveManualAnnotation_toLS = (defectName) => {
@@ -43,6 +34,11 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
         //TODO: Assert, although it should already exist at this point, always...
         let captureStatus = getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS);
         let cS = JSON.parse(captureStatus);
+
+        //Using spread since I want to preserve cS["params"] for later
+
+
+        //TODO: Call API fill 2 pts 
 
         //! DOM HOOKINS since React State is buggy
         let dS = "";
@@ -93,6 +89,20 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
 
             if(cS["p1"] && cS["p2"]) { //* It's OK! Render the Save Menu:
 
+            //* PROMPT To see if Part is Defect or Not:
+            if(isDefective < 0) {
+                return(
+                    <>
+                    <h3>Does your current Selection contain any defective behavior?</h3>
+                    <br/>
+                    <button className="blue-button" style={{marginBottom: "2vh", marginLeft: "1vw"}} onClick={() => {setIsDefective(1)}}> YES, It's Defective...</button>
+                    <br/>
+
+                    <button className="warning-button" onClick={() => {setIsDefective(0)}}> NO, It's NOT Defective </button>
+                    </>
+                );
+            }  else if(isDefective){   //! COMPONENT IS DEFECTIVE
+
                 return(
                     <>
                     <h3>Defect Severity</h3>
@@ -117,6 +127,24 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
                             }}>Add Annotation</button>
                 </div>
                     </>);
+            } else { //& If it's not True, and not under 0, it's definitely the last option; == 0
+                return(
+                    <>
+                        <h4>No Defect..? OK, Please enter name:</h4> <br/>
+
+                        <input
+                            type="url"
+                            ref={inputRef}
+                            placeholder="Give this annotation a name..."
+                        />
+                        <br/>
+                        <button className="blue-button" onClick={() => {
+                            onCloseReload();
+                            saveManualAnnotation_toLS(inputRef.current.value);
+                            }}>Add Annotation</button>
+                    </>
+                )
+            }
             }
         }
         //Nothing happened, so tell the user CS isn't sufficient yet

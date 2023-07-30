@@ -14,7 +14,7 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { GUI } from 'lil-gui';
 
 //Local stuff
-import { GET_MASK_From_Process, POST_2_NRRDs_Begin_Process, NRRD_Check_Process, POSTFloodFill } from '../util/requests';
+import { GET_MASK_From_Process, POST_2_NRRDs_Begin_Process, NRRD_Check_Process, POSTFloodFill, POSTBoxFill } from '../util/requests';
 
 //* REACT.js Pop Up Components:
 
@@ -40,7 +40,8 @@ import {
     createConeTHREE, 
     addTextMesh_withId, 
     create_box_from_2_pts_of_obj, 
-    verts_2_PointCloud
+    verts_2_PointCloud,
+    unNormalizePoints
     } 
 from '../util/ThreeHelper';
 
@@ -511,6 +512,8 @@ const InterfacePage = () => {
             let allCoords = getLocalStorageVariable(LS_SAVED_COORDS_KEY);
             allCoords = JSON.parse(allCoords);
 
+
+
             if (allCoords) {
 
                 // Loop through the keys of the 'coords' object
@@ -586,6 +589,13 @@ const InterfacePage = () => {
                         //Check again... gen bounding box if so
 
                         if(cS["p1"] && cS["p2"]) {
+
+                            console.log(cS);
+                            //! INSTEAD OF BOX, let's do PC
+                            const rawPoint_1 = unNormalizePoints([...cS["p1"]], xDim, yDim, zDim); 
+                            const rawPoint_2 = unNormalizePoints([...cS["p2"]], xDim, yDim, zDim); 
+
+                            POSTBoxFill(rawPoint_1, rawPoint_2, xDim, yDim, zDim, "", scene, verts_2_PointCloud);
                             create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, cS, 0xffff00, "select_box" , null, textMeshes, ThreeFontLoader, TextGeometry);
                         }
 
@@ -680,8 +690,13 @@ const InterfacePage = () => {
                 //Create the Entry in lil-gui controls 
 
                 savedAnnos_GUI[annotation] = true;
+
+                //TODO: Fix Point Severity Prefix `(S)`
                 let pointToggle = GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, annotation).name("(S) "+annotation); //Apply to Folder
+
+                // 
                 create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, textMeshes, ThreeFontLoader, TextGeometry);
+                
                 // hook into the change event
                 pointToggle.onChange(function(value) {                //`value` is boolean
 
