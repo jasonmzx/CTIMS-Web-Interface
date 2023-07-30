@@ -16,33 +16,43 @@ import { GUI } from 'lil-gui';
 //Local stuff
 import { GET_MASK_From_Process, POST_2_NRRDs_Begin_Process, NRRD_Check_Process, POSTFloodFill } from '../util/requests';
 
-//React Pop Up Components:
+//* REACT.js Pop Up Components:
 
-import SessionPopUp from './SessionPopUp';
-import InspectionReqPopUp from './InspectionReqPopUp';
-import WelcomePopUp from './WelcomePopUp';
-import SaveCoordsPopUp from './SaveCoordsPopUp';
-import SaveManualAnnotationPopUp from './SaveManualAnnotationPopUp';
-import ManageFeaturePopUp from './ManageFeaturePopUp';
+import SessionPopUp from '../components/SessionPopUp';
+import InspectionReqPopUp from '../components/InspectionReqPopUp';
+import WelcomePopUp from '../components/WelcomePopUp';
+import SaveCoordsPopUp from '../components/SaveCoordsPopUp';
+import SaveManualAnnotationPopUp from '../components/SaveManualAnnotationPopUp';
+import ManageFeaturePopUp from '../components/ManageFeaturePopUp';
+import DefectRegistrationPopUp from '../components/DefectRegistrationPopUp';
+
+//* Local Storage Handlers & Helpers
 
 import { LS_ANNO, getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
 import { LS_SAVED_COORDS_KEY, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS'; //Constants
 import { DEFECT_COLORS, DEFECT_COLORS_TEXT, DEFECT_LIST } from '../util/constant';
 
-const Interface = () => {
+//* My Own THREE Helpers (This file was getting too long, and quite messy to navigate...)
 
+import {
+    sliceSetHelper, 
+    removeSceneObject_ById, 
+    createConeTHREE, 
+    addTextMesh_withId, 
+    create_box_from_2_pts_of_obj, 
+    verts_2_PointCloud
+    } 
+from '../util/ThreeHelper';
 
+const InterfacePage = () => {
     function iLog  (string) {
         console.log('%c[Interface.js] '+string, 'background: #34568B; color: #EFC050')
     }
 
     let mount = useRef(null);
 
-
-    //UI State:
-
-    //& POP UPS:
-
+    //& ############################### React State ###############################  
+    //POP UPS:
     const [welcomePopUp, setWelcomePopUp] =  React.useState(<></>);
     const [sessionPopUp, setSessionPopUp] = React.useState(<></>);
     const [inspectionReqPopUp, setInspectionReqPopUp] = React.useState(<></>);
@@ -51,34 +61,35 @@ const Interface = () => {
     const [saveManualAnnoPopUp, setManualAnnoPopUp]  = React.useState(<></>);
 
     const [managePopUp, setManagePopUp] = React.useState(<></>);
+
+    const [defectInspPopUp, setDefectInspPopUp] = React.useState(<></>);
     
     const [rs, setRs] = React.useState('❌');
     const [is, setIs] = React.useState('❌');
 
     //API React state(s):
-
     const [formData, setFormData] = React.useState(() => new FormData());
 
     //Loaded Data File States:
-
     const [warningHeader,setWarningHeader] = React.useState(null);
 
-    //! Potential Tick Bandaid fix:
-    const [count, setCount] = React.useState(0);
+        //! BAND-AID FIX for Re-renders of THREE, TODO fix:
+        const [count, setCount] = React.useState(0);
 
-    // Function to increment state
-    const incrementCount = () => {
-        setCount(prevCount => prevCount + 1);
-    };
+        // Function to increment state
+        const incrementCount = () => {
+            setCount(prevCount => prevCount + 1);
+        };
+        //! BAND-AID FIX for Re-renders of THREE, TODO fix: ^^
 
-
-
-    //Blob URL paths:
+    //* >>> Blob URL paths: (NRRD Blob Stores)
 
     const [referenceNRRD, setReference_NRRD] = React.useState(null);
     const [inputNRRD, setInput_NRRD] = React.useState(null);
 
     const [api_POSTED_NRRD, setAPN] = React.useState(null); //Mask response from FastAPI
+
+    //& ############################### DOM Stuff & API Request Wrappers ############################### 
 
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'file';
@@ -136,7 +147,7 @@ const Interface = () => {
 
     useEffect(() => {
 
-    //! ########################## Hovering GUI in the Top-Right -> Default Section ( lil-gui.js ) ##########################
+    //? ########################## Hovering GUI in the Top-Right -> Default Section ( lil-gui.js ) ##########################
 
         const defaultGUI = {
             ref_nrrd_upload :  () => { //! REFERENCE NRRD
@@ -188,197 +199,20 @@ const Interface = () => {
         GUI_ADD_SCANS_SECTION.add(defaultGUI, "ref_nrrd_upload").name("Add Reference Scan "+rs);
         GUI_ADD_SCANS_SECTION.add(defaultGUI, "input_nrrd_upload").name("Add Input Scan"+is);
 
-
-
-        
-    //* ========== ========== ========== ========== ==========
-    //* >> THREE Helpers
-    //* ========== ========== ========== ========== ==========
-
-    let textMeshes = [];
-    const ThreeFontLoader = new FontLoader();
-    const sliceSetHelper = (Xpos, Ypos, Zpos, slices) => {
-
-    //? NOTE: If any sliceSetHelper axis are set to `null`, they will be unaffected        
-        
-    for(const slice of slices){
-
-            //slice.x.index = Xpos;
-            // slice.y.index = Ypos;
-            // slice.z.index = Zpos;
-
-            if(Xpos !== null){ slice.x.index = Xpos; }
-
-            if(Ypos !== null){ slice.y.index = Ypos; }
-
-            if(Zpos !== null){ slice.z.index = Zpos; }
-
-            slice.x.repaint();
-            slice.y.repaint();   
-            slice.z.repaint();
-        }
-    }
-
-    const removeSceneObject_ById = (scene, id) => {
-        const objectToRemove = scene.children.find(obj => obj.userData.id === id);
-        if (objectToRemove) {
-            // Remove the object from the scene
-            scene.remove(objectToRemove);
-            // Dispose of the object's geometry and material to free up memory
-            if (objectToRemove.geometry) {
-                objectToRemove.geometry.dispose();
-            }
-            if (objectToRemove.material) {
-                objectToRemove.material.dispose();
-            }
-        }
-    }
-
-    const createCone = (X,Y,Z, coneId, hexColor) => {
-        const cone = new THREE.Mesh(
-            new THREE.ConeGeometry(5, 20, 32),
-            new THREE.MeshBasicMaterial({color: hexColor})
-        );
-
-        cone.rotation.x = Math.PI;
-        cone.position.set(X, Y + 10, Z);
-
-        // Assign a unique ID to the cone
-        cone.userData.id = coneId;
-
-        scene.add(cone);
-
-        return cone;
-    }
-
-    const addTextMesh = (textMesh) => {textMeshes.push(textMesh);}
-
-    const addTextMesh_withId = (X,Y,Z, textStr, id, color) => {
-
-            let textMesh; //Mesh Variable for Text Renderings
-
-            ThreeFontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
-                const textGeometry = new TextGeometry(textStr, {
-                    font: font,
-                    size: 10,  // size of the text
-                    height: 1,  // how much extrusion (how thick / deep are the letters)
-                });
-
-                let textMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
-
-                if(color) { //If color is passed thru, set it
-                    textMaterial = new THREE.MeshBasicMaterial({color});
-                }
-
-
-                // Create mesh with the geometry and material
-                textMesh = new THREE.Mesh(textGeometry, textMaterial);
-
-                //! ALWAYS ON TOP breaks....
-                // textMesh.renderOrder = 1000;  // Make Text Meshes, always on top
-                // textMesh.material.depthTest = false;
-
-                // Position the text over the cone. Adjust as necessary.
-                textMesh.position.set(X, Y + 30, Z);  // we set Y + 10 to position it above the cone
-                const textid = id += "_label";
-
-                textMesh.userData.id = textid;
-
-                // Add the text to the scene
-                addTextMesh(textMesh);
-                scene.add(textMesh);
-                
-            });
-    }
-
-    const create_box_from_2_pts_of_obj = (obj, boxColor, boxId, boxName) => {
-        
-        const severity = obj["severity"];
-        const idx = DEFECT_LIST.indexOf(severity);
-
-        //If a boxColor isn't defined, assume it's a Saved Defect
-        if(!boxColor) {
-            boxColor = DEFECT_COLORS[idx];
-        }
-
-        //Takes in an object with keys "p1" and "p2" to be Arrays of 3 elms (each)
-        const X1 = obj["p1"][0];         const Y1 = obj["p1"][1];         const Z1 = obj["p1"][2];
-        const X2 = obj["p2"][0];         const Y2 = obj["p2"][1];         const Z2 = obj["p2"][2];
-
-                                    // Create geometry of the box
-        const geometry = new THREE.BoxGeometry(X2 - X1, Y2 - Y1, Z2 - Z1);
-
-        // Create a yellow, semi-transparent material
-        const material = new THREE.MeshBasicMaterial({
-            color: boxColor,
-            opacity: 0.5,
-            transparent: true,
-        });
-
-        // Combine geometry and material to create a mesh
-        const box = new THREE.Mesh(geometry, material);
-
-        // Set the box's position so that it spans from (X1, Y1, Z1) to (X2, Y2, Z2)
-        box.position.set((X1 + X2) / 2, (Y1 + Y2) / 2, (Z1 + Z2) / 2);
-        box.userData.id = boxId;
-        // Add the box to the scene
-        scene.add(box);
-
-        if(boxName){
-            addTextMesh_withId(X1,Y1,Z1, boxId,boxName, DEFECT_COLORS_TEXT[idx] ); //Hook it to the box Id for when this mesh gets deleted
-        }
-    }
-
-    const create_flood_fill_obj = (xDim, yDim, zDim, vertices, indices) => {
-        let normalized_vertices = [];
-    
-        for (const v3 of vertices) {
-            const X = v3[0] - xDim / 2;
-            const Y = v3[1] - yDim / 2;
-            const Z = v3[2] - zDim / 2;
-            normalized_vertices.push(new THREE.Vector3(X, Y, Z));
-        }
-    
-        // Create a geometry
-        let geometry = new THREE.BufferGeometry();
-    
-        // Create a Float32Array from the normalized_vertices array
-        let verticesArray = new Float32Array(normalized_vertices.length * 3); // three components per vertex
-    
-        for (let i = 0; i < normalized_vertices.length; i++) {
-            verticesArray[i * 3] = normalized_vertices[i].x;
-            verticesArray[i * 3 + 1] = normalized_vertices[i].y;
-            verticesArray[i * 3 + 2] = normalized_vertices[i].z;
-        }
-    
-        // Assign attributes to the geometry
-        geometry.setAttribute('position', new THREE.BufferAttribute(verticesArray, 3));
-    
-        // Create a material
-
-        let material = new THREE.PointsMaterial({ color: 0xff0000, size: 1.5, sizeAttenuation: false });
-
-        // Create a points (particle system)
-        let points = new THREE.Points(geometry, material);
-    
-        // Add the points to the scene
-        scene.add(points);
-    }
-    
-    
-
-
         //! ########################## THREE.js Setup ##########################
 
         // Scene, camera, and renderer setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, mount.current.clientWidth / mount.current.clientHeight, 0.01, 1e10);
         const renderer = new THREE.WebGLRenderer();
-
+        const ThreeFontLoader = new FontLoader();
 
         //!RAYCASTER
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
+
+        //* >> Three's Reference of all Text Meshes in `scene`
+        let textMeshes = [];
 
         const PointDeleteWrapper = (objectId) => {
                 removeSceneObject_ById(scene, objectId);
@@ -393,7 +227,7 @@ const Interface = () => {
         }
 
             // Create a click event listener
-            window.addEventListener('click', function(event) {
+        window.addEventListener('click', function(event) {
                 mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             
@@ -417,7 +251,7 @@ const Interface = () => {
                         console.log("Nothing was selected...");
                     }
                 }
-            }, false);
+        }, false);
 
         // Add hemisphere and directional light
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
@@ -622,7 +456,7 @@ const Interface = () => {
                     sphere.position.set(X, Y, Z); // Replace X, Y, Z with your desired coordinates.
                     scene.add(sphere);
                     //Add Title to the Sphere:
-                    addTextMesh_withId(X+20,Y,Z+20, `P: ( ${X} , ${Y} , ${Z} ) <-- X, Y, Z Respectively...`, "cursor", null);
+                    addTextMesh_withId(scene, ThreeFontLoader, TextGeometry,X+20,Y,Z+20, `P: ( ${X} , ${Y} , ${Z} ) <-- X, Y, Z Respectively...`, "cursor", null, textMeshes);
                 } else {
                     removeSceneObject_ById(scene,"cursor");
                     removeSceneObject_ById(scene, "cursor_label");
@@ -737,22 +571,22 @@ const Interface = () => {
                         if(!cS["p1"]){
                             cS["p1"] = [X,Y,Z];
                             setLSObject(LS_ANNO_CAPTURE_STATUS, cS);
-                            createCone(X,Y,Z, "p1", 0xffff00);
-                            addTextMesh_withId(X,Y,Z,"Point 1", "p1"); //Add corresponding Billboard Label
+                            createConeTHREE(scene, X,Y,Z, "p1", 0xffff00);
+                            addTextMesh_withId(scene, ThreeFontLoader, TextGeometry,X,Y,Z,"Point 1", "p1", null, textMeshes); //Add corresponding Billboard Label
                         }
 
                         // If p2 is False, capture it:
                         else if(!cS["p2"]){
                             cS["p2"] = [X,Y,Z];
                             setLSObject(LS_ANNO_CAPTURE_STATUS, cS);
-                            createCone(X,Y,Z, "p2", 0x4d32f0);
-                            addTextMesh_withId(X,Y,Z,"Point 2", "p2");//Add corresponding Billboard Label
+                            createConeTHREE(scene, X,Y,Z, "p2", 0x4d32f0);
+                            addTextMesh_withId(scene, ThreeFontLoader, TextGeometry,X,Y,Z,"Point 2", "p2", null, textMeshes);//Add corresponding Billboard Label
                         } 
 
                         //Check again... gen bounding box if so
 
                         if(cS["p1"] && cS["p2"]) {
-                            create_box_from_2_pts_of_obj(cS, 0xffff00, "select_box" , null);
+                            create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, cS, 0xffff00, "select_box" , null, textMeshes, ThreeFontLoader, TextGeometry);
                         }
 
                         console.log(cS);
@@ -763,7 +597,7 @@ const Interface = () => {
 
                         setLSObject(LS_ANNO_CAPTURE_STATUS, anoStat);
                         
-                        createCone(X,Y,Z, "p1", 0xffff00);
+                        createConeTHREE(scene, X,Y,Z, "p1", 0xffff00);
                     }
 
 
@@ -822,10 +656,15 @@ const Interface = () => {
                 const Z_o = slices1.z.index;
 
                 console.log("#### FLOOD-FILL START POINT #####",X_o,Y_o,Z_o);
-                POSTFloodFill(X_o,Y_o,Z_o,xDim,yDim,zDim,"",create_flood_fill_obj);
+                POSTFloodFill(X_o,Y_o,Z_o,xDim,yDim,zDim,"",scene, verts_2_PointCloud);
 
                 //UnNormalize
 
+              },
+              floodfill_point_popup : function () {
+                setDefectInspPopUp(<DefectRegistrationPopUp
+                onClose={() => {setDefectInspPopUp(<></>)}}
+                />)
               }  
             } // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
 
@@ -842,12 +681,12 @@ const Interface = () => {
 
                 savedAnnos_GUI[annotation] = true;
                 let pointToggle = GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, annotation).name("(S) "+annotation); //Apply to Folder
-                create_box_from_2_pts_of_obj(savedAnnotationObjectValue, null, annotation, annotation);
+                create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, textMeshes, ThreeFontLoader, TextGeometry);
                 // hook into the change event
                 pointToggle.onChange(function(value) {                //`value` is boolean
 
                     if(value) {
-                        create_box_from_2_pts_of_obj(savedAnnotationObjectValue, null, annotation, annotation);
+                        create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, textMeshes, ThreeFontLoader, TextGeometry);
                     } else {
                         removeSceneObject_ById(scene, annotation);
                         removeSceneObject_ById(scene, annotation+"_label");
@@ -857,8 +696,10 @@ const Interface = () => {
 
             //&  Add Manage Button (If There are saved annotations)
             GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "manage_saved_annos").name("⚙️Manage Saved Annotations");
-            GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "floodfill_point").name("FF Tool");
         }
+
+        GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "floodfill_point").name("1.PT Flood Fill Detection");
+        GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "floodfill_point_popup").name("Register Defect");
       
     //* ========== ========== ========== ========== ==========
     //* >> MENU STYLINGS: (lil-gui Javascript CSS injection)
@@ -973,6 +814,7 @@ const Interface = () => {
         {saveCoordsPopUp}
         {saveManualAnnoPopUp}
         {managePopUp}
+        {defectInspPopUp}
 
         {/*Actual UI of Interface+ */}
 
@@ -981,4 +823,4 @@ const Interface = () => {
     </>
     );
 }
-export default Interface;
+export default InterfacePage;

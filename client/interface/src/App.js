@@ -5,14 +5,14 @@ import {
   Route,
   Link
 } from 'react-router-dom';
-import Interface from './components/Interface';
 
+import InterfacePage from './pages/InterfacePage';
 
 function App() {
   return (
     <Router>
         <Routes>
-          <Route path="/" element={<Interface />} />
+          <Route path="/" element={<InterfacePage />} />
         </Routes>
     </Router>
   );
