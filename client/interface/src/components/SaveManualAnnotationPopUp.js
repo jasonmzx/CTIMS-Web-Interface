@@ -36,8 +36,6 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
         let cS = JSON.parse(captureStatus);
 
         //Using spread since I want to preserve cS["params"] for later
-
-
         //TODO: Call API fill 2 pts 
 
         //! DOM HOOKINS since React State is buggy

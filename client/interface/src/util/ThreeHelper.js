@@ -69,7 +69,8 @@ export function create_box_from_2_pts_of_obj(scene,
     obj, 
     boxColor, 
     boxId, 
-    boxName, 
+    boxName,
+    opacity, 
     textMeshes, FontLoader, TextGeometry 
     ) {
         
@@ -91,7 +92,7 @@ export function create_box_from_2_pts_of_obj(scene,
     // Create a yellow, semi-transparent material
     const material = new THREE.MeshBasicMaterial({
         color: boxColor,
-        opacity: 0.5,
+        opacity: opacity,
         transparent: true,
     });
 

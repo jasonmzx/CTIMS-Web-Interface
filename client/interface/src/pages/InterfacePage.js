@@ -24,7 +24,6 @@ import WelcomePopUp from '../components/WelcomePopUp';
 import SaveCoordsPopUp from '../components/SaveCoordsPopUp';
 import SaveManualAnnotationPopUp from '../components/SaveManualAnnotationPopUp';
 import ManageFeaturePopUp from '../components/ManageFeaturePopUp';
-import DefectRegistrationPopUp from '../components/DefectRegistrationPopUp';
 
 //* Local Storage Handlers & Helpers
 
@@ -87,7 +86,6 @@ const InterfacePage = () => {
 
     const [referenceNRRD, setReference_NRRD] = React.useState(null);
     const [inputNRRD, setInput_NRRD] = React.useState(null);
-
     const [api_POSTED_NRRD, setAPN] = React.useState(null); //Mask response from FastAPI
 
     //& ############################### DOM Stuff & API Request Wrappers ############################### 
@@ -127,27 +125,23 @@ const InterfacePage = () => {
     //! NRRD Volumes POST Callback (from popup)
 
     const PostNRRDsProc = async () => {
-
         //CLEAR ANY Defined Annotations
         //TODO:
 
         //setAPN will set API mask resp:
-
         let resp = await POST_2_NRRDs_Begin_Process(formData);
         return resp;
     }
 
     const getMASKfile = async (Process_ID_String) => {
-
+        //*### Sets Capture Points back to None: ###
         setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1":false,"p2":false});
 
-        let resp = await GET_MASK_From_Process(Process_ID_String, setAPN);
-        console.log("MASK APN SET");
+        await GET_MASK_From_Process(Process_ID_String, setAPN);
+        iLog("Defect Mask Set !");
     }
 
-
     useEffect(() => {
-
     //? ########################## Hovering GUI in the Top-Right -> Default Section ( lil-gui.js ) ##########################
 
         const defaultGUI = {
@@ -223,7 +217,6 @@ const InterfacePage = () => {
                 //! LS : update capture Status
                 let captureStatus = JSON.parse(getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS));
                 captureStatus[objectId] = false;
-                console.log(captureStatus);
                 setLSObject(LS_ANNO_CAPTURE_STATUS,captureStatus);                
         }
 
@@ -366,20 +359,16 @@ const InterfacePage = () => {
                 emptyBool : false
             };
 
-            //Add Yellow Bounding box to scene
-        
-            // Create sliders
-            const GUI_VOLUMES = gui.addFolder('Volume Inspection');
+        // Create sliders
+        const GUI_VOLUMES = gui.addFolder('Volume Inspection');
             ['x', 'y', 'z'].forEach(axis => {
-                GUI_VOLUMES.add(slices1[axis], 'index', 0, volume1.RASDimensions[0], 1).name(`${axis.toUpperCase()} - Axis`).onChange(() => {
+        GUI_VOLUMES.add(slices1[axis], 'index', 0, volume1.RASDimensions[0], 1).name(`${axis.toUpperCase()} - Axis`).onChange(() => {
 
-                    slices2[axis].index = slices1[axis].index; // Sync the index
+        slices2[axis].index = slices1[axis].index; // Sync the index
 
-                    slices1[axis].repaint();
-                    slices2[axis].repaint();
+        slices1[axis].repaint();
+        slices2[axis].repaint();
                     
-
-
                     // For Cursor:
                     const xDim = volume1.RASDimensions[0];
                     const yDim = volume1.RASDimensions[1];
@@ -418,7 +407,7 @@ const InterfacePage = () => {
             });
         
             // Add opacity controller
-            GUI_VOLUMES.add({ opacity: INITIAL_OPACITY_OF_DEFECT }, 'opacity', 0, 1).name("👁️ Defect Mask Opacity").onChange(function (value) {
+        GUI_VOLUMES.add({ opacity: INITIAL_OPACITY_OF_DEFECT }, 'opacity', 0, 1).name("👁️ Defect Mask Opacity").onChange(function (value) {
 
                 [...Object.values(slices2)].forEach(slice => {
                     slice.mesh.material.opacity = value;
@@ -596,7 +585,14 @@ const InterfacePage = () => {
                             const rawPoint_2 = unNormalizePoints([...cS["p2"]], xDim, yDim, zDim); 
 
                             POSTBoxFill(rawPoint_1, rawPoint_2, xDim, yDim, zDim, "", scene, verts_2_PointCloud);
-                            create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, cS, 0xffff00, "select_box" , null, textMeshes, ThreeFontLoader, TextGeometry);
+                            
+                            //* ### Box Creation CB
+                            create_box_from_2_pts_of_obj(
+                                scene, 
+                                DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, 
+                                cS, 0xffff00, "select_box" , null, 0.25, 
+                                textMeshes, ThreeFontLoader, TextGeometry
+                            );
                         }
 
                         console.log(cS);
@@ -615,6 +611,7 @@ const InterfacePage = () => {
 
                 delete_p1 : function () { PointDeleteWrapper("p1"); },
                 delete_p2 : function () { PointDeleteWrapper("p2"); },
+                
                 save_annotation : function () {
 
                     //TODO: Check p1 and p2 aren't false
@@ -626,11 +623,8 @@ const InterfacePage = () => {
                         incrementCount(); }}
                         volume={volume1}
                         />
-                    )
-                }
+                    )}
         }
-
-
             //If both points are there, create bounding box
 
             const GUI_ANNO_VIEW = gui.addFolder('Annotations');
@@ -646,15 +640,6 @@ const InterfacePage = () => {
             let sA = JSON.parse(savedAnnos_str);
 
             let savedAnnos_GUI = {
-              manage_saved_annos : function () {
-                setManagePopUp(<ManageFeaturePopUp 
-                    onClose={() =>{setManagePopUp(<></>)}}
-                    onCloseReload={() =>{setManagePopUp(<></>
-                    ); incrementCount();}}
-                    featureName={"Manual Annotations"}
-                    LSFeatureRef={LS_ANNO}
-                    />);
-              },
               floodfill_point : function () {
                 const xDim = volume1.RASDimensions[0];
                 const yDim = volume1.RASDimensions[1];
@@ -670,12 +655,7 @@ const InterfacePage = () => {
 
                 //UnNormalize
 
-              },
-              floodfill_point_popup : function () {
-                setDefectInspPopUp(<DefectRegistrationPopUp
-                onClose={() => {setDefectInspPopUp(<></>)}}
-                />)
-              }  
+              } 
             } // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
 
         //* ========== ========== ========== ========== ==========
@@ -695,26 +675,22 @@ const InterfacePage = () => {
                 let pointToggle = GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, annotation).name("(S) "+annotation); //Apply to Folder
 
                 // 
-                create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, textMeshes, ThreeFontLoader, TextGeometry);
+                create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, 0.5, textMeshes, ThreeFontLoader, TextGeometry);
                 
                 // hook into the change event
                 pointToggle.onChange(function(value) {                //`value` is boolean
 
                     if(value) {
-                        create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, textMeshes, ThreeFontLoader, TextGeometry);
+                        create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, 0.5, textMeshes, ThreeFontLoader, TextGeometry);
                     } else {
                         removeSceneObject_ById(scene, annotation);
                         removeSceneObject_ById(scene, annotation+"_label");
                     }
                 }); 
             }
-
-            //&  Add Manage Button (If There are saved annotations)
-            GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "manage_saved_annos").name("⚙️Manage Saved Annotations");
         }
 
         GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "floodfill_point").name("1.PT Flood Fill Detection");
-        GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "floodfill_point_popup").name("Register Defect");
       
     //* ========== ========== ========== ========== ==========
     //* >> MENU STYLINGS: (lil-gui Javascript CSS injection)
