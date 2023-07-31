@@ -88,6 +88,11 @@ const InterfacePage = () => {
     const [inputNRRD, setInput_NRRD] = React.useState(null);
     const [api_POSTED_NRRD, setAPN] = React.useState(null); //Mask response from FastAPI
 
+    
+    //*DEFAULT STATE OF CAPTURE POINTs:
+
+    const cS_RESET = {"p1" : false, "p2" : false, "verts" : []}
+
     //& ############################### DOM Stuff & API Request Wrappers ############################### 
 
     const hiddenInput = document.createElement('input');
@@ -133,13 +138,36 @@ const InterfacePage = () => {
         return resp;
     }
 
-    const getMASKfile = async (Process_ID_String) => {
-        //*### Sets Capture Points back to None: ###
-        setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1":false,"p2":false});
-
+    const API_getMaskFile = async (Process_ID_String) => {
+        //*### Initialize Capture Points JSON object, Or Set back to None ###
+        setLSObject(LS_ANNO_CAPTURE_STATUS, cS_RESET); 
         await GET_MASK_From_Process(Process_ID_String, setAPN);
         iLog("Defect Mask Set !");
     }
+
+    //* This function handles incoming Vertices (from API) into Capture Status Object, with appropriate assertions
+        const handleVerts_for_cS = (verts, scene, xDim, yDim, zDim,x,y,z) => {
+
+            //! Assert: Is Verts empty?
+            if(!(verts.length)){
+                return;
+            }
+        //* 1. Save Verts to Capture Status:
+            let captureStatus = JSON.parse(getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS));
+            captureStatus["verts"] = verts;
+
+        //* 2. Render Temporary Point Cloud:
+            verts_2_PointCloud(scene,xDim,yDim,zDim,verts);
+
+        //* 3. Save X, Y, Z as Point 1 if applicable
+            if(x || y || z || (x === 0 && y === 0 && z === 0)) { //If one coord is true, or they are all Explicitly value 0
+                captureStatus["p1"] = [x-xDim/2, y-yDim/2, z-zDim/2];
+            }
+
+        //refresh ls obj:
+        setLSObject(LS_ANNO_CAPTURE_STATUS, captureStatus);
+    }
+
 
     useEffect(() => {
     //? ########################## Hovering GUI in the Top-Right -> Default Section ( lil-gui.js ) ##########################
@@ -176,7 +204,7 @@ const InterfacePage = () => {
                     inpBlob={inputNRRD}
                     postNRRDs_cb={PostNRRDsProc}
                     checkNRRDproc_cb={NRRD_Check_Process}
-                    getNRRDmask_cb ={getMASKfile}
+                    getNRRDmask_cb ={API_getMaskFile}
                 />);
             }
         }
@@ -534,7 +562,7 @@ const InterfacePage = () => {
                 console.log("No coordinates found in local storage");
             }
 
-            //? ################ ANNOTATION GUI #####################
+//? ################ ANNOTATION GUI #####################
 
         const annotationControlsGUI = {
                 save_point : function () {
@@ -623,7 +651,22 @@ const InterfacePage = () => {
                         incrementCount(); }}
                         volume={volume1}
                         />
-                    )}
+                    )},
+                
+                
+                floodfill_point : function () {
+                    const xDim = volume1.RASDimensions[0];
+                    const yDim = volume1.RASDimensions[1];
+                    const zDim = volume1.RASDimensions[2];
+    
+                    //This points aren't normalized, since we want the Real Coords with respect to .nrrd volume
+                    const X_o = slices1.x.index;
+                    const Y_o = slices1.y.index;
+                    const Z_o = slices1.z.index;
+    
+                    console.log("#### FLOOD-FILL START POINT #####",X_o,Y_o,Z_o);
+                    POSTFloodFill(X_o,Y_o,Z_o,xDim,yDim,zDim,"", scene, handleVerts_for_cS);
+                } 
         }
             //If both points are there, create bounding box
 
@@ -632,6 +675,7 @@ const InterfacePage = () => {
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p1").name("DELETE 🗙 Point 1");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point 2");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "save_annotation").name("Save This Annotation");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "floodfill_point").name("1.PT Flood Fill Detection");
 
             //Saved Annotation Toggles
             const GUI_SAVED_ANNO_VIEW = gui.addFolder("Saved Manual Annotations");
@@ -640,22 +684,15 @@ const InterfacePage = () => {
             let sA = JSON.parse(savedAnnos_str);
 
             let savedAnnos_GUI = {
-              floodfill_point : function () {
-                const xDim = volume1.RASDimensions[0];
-                const yDim = volume1.RASDimensions[1];
-                const zDim = volume1.RASDimensions[2];
-
-                //This points aren't normalized, since we want the Real Coords with respect to .nrrd volume
-                const X_o = slices1.x.index;
-                const Y_o = slices1.y.index;
-                const Z_o = slices1.z.index;
-
-                console.log("#### FLOOD-FILL START POINT #####",X_o,Y_o,Z_o);
-                POSTFloodFill(X_o,Y_o,Z_o,xDim,yDim,zDim,"",scene, verts_2_PointCloud);
-
-                //UnNormalize
-
-              } 
+                manage_saved_annos : function () {
+                    setManagePopUp(<ManageFeaturePopUp 
+                        onClose={() =>{setManagePopUp(<></>)}}
+                        onCloseReload={() =>{setManagePopUp(<></>
+                        ); incrementCount();}}
+                        featureName={"Manual Annotations"}
+                        LSFeatureRef={LS_ANNO}
+                        />);
+            },
             } // CHECKBOX CONTROL FOR SAVED ANNOTATIONS 
 
         //* ========== ========== ========== ========== ==========
@@ -688,10 +725,9 @@ const InterfacePage = () => {
                     }
                 }); 
             }
+            GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "manage_saved_annos").name("⚙️Manage Saved Annotations");
         }
 
-        GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "floodfill_point").name("1.PT Flood Fill Detection");
-      
     //* ========== ========== ========== ========== ==========
     //* >> MENU STYLINGS: (lil-gui Javascript CSS injection)
     //* ========== ========== ========== ========== ==========  

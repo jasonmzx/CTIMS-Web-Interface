@@ -11,7 +11,6 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
     const zDim = volume.RASDimensions[2];
 
     //React Ref & State hooks:
-
     const inputRef = React.useRef(null);
     const [isDefective,setIsDefective] = React.useState(-1);
 
@@ -22,58 +21,59 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
     }
 
 
-    const saveManualAnnotation_toLS = (defectName) => {
+const saveManualAnnotation_toLS = (defectName, inspectionType) => {
 
-        //!Assert: Check if Manual Annotation variable exists in LS
-        let manualAnnotations = getLocalStorageVariable(LS_ANNO);
-        if(!manualAnnotations) { setLSObject(LS_ANNO, {}); manualAnnotations = "{}"; }
+    //!Assert: Check if Manual Annotation variable exists in LS
+    let manualAnnotations = getLocalStorageVariable(LS_ANNO);
+    if(!manualAnnotations) { setLSObject(LS_ANNO, {}); manualAnnotations = "{}"; }
 
-        //Now that LS_ANNO is set forsure
-        let mA = JSON.parse(manualAnnotations);
+    //* Now that `LS_ANNO` is set to an Object forsure:
 
-        //TODO: Assert, although it should already exist at this point, always...
-        let captureStatus = getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS);
-        let cS = JSON.parse(captureStatus);
+    let mA = JSON.parse(manualAnnotations);
+    let captureStatus = getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS);
+    let cS = JSON.parse(captureStatus); //At this point, we know cS["p1"] is forsure registered
 
-        //Using spread since I want to preserve cS["params"] for later
-        //TODO: Call API fill 2 pts 
-
-        //! DOM HOOKINS since React State is buggy
-        let dS = "";
-        for(const i in DEFECT_LIST) {
-            let defect = DEFECT_LIST[i];
-            if(document.getElementById(defect).checked === true) {
-                dS = defect;
-            }
+    //TODO FIX: DOM HOOK-INS since React State is buggy
+    let dS = "";
+    for(const i in DEFECT_LIST) {
+        let defect = DEFECT_LIST[i];
+        if(document.getElementById(defect).checked === true) {
+            dS = defect;
         }
-
-        //Add Manual Annotation Entry:
-        mA[defectName] = {
-            "p1" : cS["p1"],
-            "p1_un" : unNormalizePoints([...cS["p1"]]),
-            "p2" : cS["p2"],
-            "p2_un" : unNormalizePoints([...cS["p2"]]),
-            "severity" : dS
-        }
-
-        setLSObject(LS_ANNO, mA);
-        
-        //Now that the Annotation is saved, clear the captureStatus:
-
-        setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1" : false , "p2" : false});
     }
 
-    const genDefects = () => {
-        let defectList = [];
-        for(const i in DEFECT_LIST) {
-            let defect = DEFECT_LIST[i];
+    //Add Manual Annotation Entry:
+    mA[defectName] = {
+        "p1" : cS["p1"],
+        "p1_nrrd" : unNormalizePoints([...cS["p1"]], xDim, yDim, zDim),
 
-            defectList.push(
-                <><input type="radio" value={defect} id={defect}/> {defect} <br/></>
-            )
-        }
-        return defectList;
+        "is_defective" : isDefective,
+        "severity" : dS
     }
+
+    if(cS["p2"]) { //! IF ITS A 2. POINT INSPECTION; Register Second Point
+
+    mA[defectName]["p2"] = cS["p2"];
+    mA[defectName]["p2_nrrd"] = unNormalizePoints([...cS["p2"]], xDim, yDim, zDim);
+    }
+    
+    setLSObject(LS_ANNO, mA);
+
+    //Now that the Annotation is saved, clear the captureStatus:
+    setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1" : false , "p2" : false});
+}
+
+const genDefects = () => {
+    let defectList = [];
+    for(const i in DEFECT_LIST) {
+        let defect = DEFECT_LIST[i];
+
+        defectList.push(
+            <><input type="radio" value={defect} id={defect}/> {defect} <br/></>
+        )
+    }
+    return defectList;
+}
 
     const render = () => {
 
@@ -85,13 +85,16 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
 
             let cS = JSON.parse(captureStatus);
 
-            if(cS["p1"] && cS["p2"]) { //* It's OK! Render the Save Menu:
+        if(cS["verts"]) { //* If Vertices are Registered, Let's proceed with registration
 
             //* PROMPT To see if Part is Defect or Not:
             if(isDefective < 0) {
                 return(
                     <>
-                    <h3>Does your current Selection contain any defective behavior?</h3>
+                    <span>
+                        You're performing a: <b>{cS["p2"] == true ? "2 Point Inspection" : "Single Point Inspection"}</b>
+                    </span>
+                    <h3>Does your current Selection contain any Defects?</h3>
                     <br/>
                     <button className="blue-button" style={{marginBottom: "2vh", marginLeft: "1vw"}} onClick={() => {setIsDefective(1)}}> YES, It's Defective...</button>
                     <br/>
@@ -125,7 +128,7 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
                             }}>Add Annotation</button>
                 </div>
                     </>);
-            } else { //& If it's not True, and not under 0, it's definitely the last option; == 0
+        } else { //& If it's not True, and not under 0, it's definitely the last option; == 0
                 return(
                     <>
                         <h4>No Defect..? OK, Please enter name:</h4> <br/>
@@ -143,7 +146,8 @@ const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
                     </>
                 )
             }
-            }
+        }
+
         }
         //Nothing happened, so tell the user CS isn't sufficient yet
 

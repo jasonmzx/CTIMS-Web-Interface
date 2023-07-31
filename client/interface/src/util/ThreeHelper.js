@@ -168,7 +168,7 @@ export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices){
         verticesArray[i * 3] = normalized_vertices[i].x;
         verticesArray[i * 3 + 1] = normalized_vertices[i].y;
         verticesArray[i * 3 + 2] = normalized_vertices[i].z;
-    }
+    }           
 
     // Assign attributes to the geometry
     geometry.setAttribute('position', new THREE.BufferAttribute(verticesArray, 3));
