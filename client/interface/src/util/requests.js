@@ -156,7 +156,7 @@ export async function POSTFloodFill(x,y,z, xDim, yDim, zDim, nrrdName,scene,call
 //* >> 2 POINT BOX FILL TOOL REQUESTS, INTERACTIVE SEGMENTATION 
 //* ========== ========== ========== ========== ==========
 
-export async function POSTBoxFill(p1, p2, xDim, yDim, zDim, nrrdName, scene, THREE_callback) {
+export async function POSTBoxFill(p1, p2, xDim, yDim, zDim, nrrdName, scene, handleVerts_CALLBACK) {
 
   const body = {
     "p1": p1,
@@ -188,7 +188,7 @@ export async function POSTBoxFill(p1, p2, xDim, yDim, zDim, nrrdName, scene, THR
 
     const jsonResp = await RESPONSE.json();
     console.log(jsonResp);
-    THREE_callback(scene, xDim,yDim,zDim,jsonResp["vertices"], jsonResp["indices"]);
+    handleVerts_CALLBACK(jsonResp["vertices"], scene, xDim,yDim,zDim);
 
     return jsonResp;
 

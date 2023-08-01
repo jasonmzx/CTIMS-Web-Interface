@@ -1,6 +1,6 @@
 import React from 'react'
 import { getLocalStorageVariable, setLSObject, LS_ANNO_CAPTURE_STATUS, LS_ANNO } from '../util/handleLS';
-import {DEFECT_LIST} from '../util/constant';
+import {DEFECT_LIST, cS_RESET} from '../util/constant';
 import { unNormalizePoints } from '../util/ThreeHelper';
 
 const SaveManualAnnotationPopUp = ({onClose, onCloseReload, volume}) => {
@@ -27,9 +27,9 @@ const saveManualAnnotation_toLS = (defectName, inspectionType) => {
     let manualAnnotations = getLocalStorageVariable(LS_ANNO);
     if(!manualAnnotations) { setLSObject(LS_ANNO, {}); manualAnnotations = "{}"; }
 
-    //* Now that `LS_ANNO` is set to an Object forsure:
-
+    //* Now that `LS_ANNO` is set to an Object forsure, parse it:
     let mA = JSON.parse(manualAnnotations);
+
     let captureStatus = getLocalStorageVariable(LS_ANNO_CAPTURE_STATUS);
     let cS = JSON.parse(captureStatus); //At this point, we know cS["p1"] is forsure registered
 
@@ -46,9 +46,9 @@ const saveManualAnnotation_toLS = (defectName, inspectionType) => {
     mA[defectName] = {
         "p1" : cS["p1"],
         "p1_nrrd" : unNormalizePoints([...cS["p1"]], xDim, yDim, zDim),
-
         "is_defective" : isDefective,
-        "severity" : dS
+        "severity" : dS,
+        "verts" : cS["verts"]
     }
 
     if(cS["p2"]) { //! IF ITS A 2. POINT INSPECTION; Register Second Point
@@ -60,7 +60,7 @@ const saveManualAnnotation_toLS = (defectName, inspectionType) => {
     setLSObject(LS_ANNO, mA);
 
     //Now that the Annotation is saved, clear the captureStatus:
-    setLSObject(LS_ANNO_CAPTURE_STATUS, {"p1" : false , "p2" : false});
+    setLSObject(LS_ANNO_CAPTURE_STATUS, cS_RESET);
 }
 
 const genDefects = () => {
@@ -111,7 +111,6 @@ const genDefects = () => {
                     {genDefects()}
                 </div>
                 <br/>
-
                     <div style={{display: 'flex',
                     alignItems: 'center',
                     gap: '10px'}}>

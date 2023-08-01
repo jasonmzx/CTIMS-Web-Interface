@@ -148,7 +148,7 @@ export function addTextMesh_withId (scene, FontLoader, TextGeometry, X,Y,Z, text
     });
 }
 
-export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices){
+export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices, annoName){
     let normalized_vertices = [];
 
     for (const v3 of vertices) {
@@ -179,6 +179,7 @@ export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices){
 
     // Create a points (particle system)
     let points = new THREE.Points(geometry, material);
+    points.userData.id = annoName;
 
     // Add the points to the scene
     scene.add(points);

@@ -29,7 +29,7 @@ import ManageFeaturePopUp from '../components/ManageFeaturePopUp';
 
 import { LS_ANNO, getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
 import { LS_SAVED_COORDS_KEY, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS'; //Constants
-import { DEFECT_COLORS, DEFECT_COLORS_TEXT, DEFECT_LIST } from '../util/constant';
+import { DEFECT_COLORS, DEFECT_COLORS_TEXT, DEFECT_LIST, cS_RESET } from '../util/constant';
 
 //* My Own THREE Helpers (This file was getting too long, and quite messy to navigate...)
 
@@ -88,10 +88,6 @@ const InterfacePage = () => {
     const [inputNRRD, setInput_NRRD] = React.useState(null);
     const [api_POSTED_NRRD, setAPN] = React.useState(null); //Mask response from FastAPI
 
-    
-    //*DEFAULT STATE OF CAPTURE POINTs:
-
-    const cS_RESET = {"p1" : false, "p2" : false, "verts" : []}
 
     //& ############################### DOM Stuff & API Request Wrappers ############################### 
 
@@ -157,9 +153,9 @@ const InterfacePage = () => {
             captureStatus["verts"] = verts;
 
         //* 2. Render Temporary Point Cloud:
-            verts_2_PointCloud(scene,xDim,yDim,zDim,verts);
+            verts_2_PointCloud(scene,xDim,yDim,zDim,verts,"");
 
-        //* 3. Save X, Y, Z as Point 1 if applicable
+        //* 3. Save X, Y, Z as Point 1 if applicable (OPTIONAL)
             if(x || y || z || (x === 0 && y === 0 && z === 0)) { //If one coord is true, or they are all Explicitly value 0
                 captureStatus["p1"] = [x-xDim/2, y-yDim/2, z-zDim/2];
             }
@@ -447,7 +443,7 @@ const InterfacePage = () => {
             let cursorToggle = GUI_VOLUMES.add(volumeControlGUI, 'emptyBool').name('🎯 Toggle Cursor');
 
             cursorToggle.onChange(function(value) {
-                console.log("CURSOR >> " + value);
+            console.log("CURSOR >> " + value);
 
                 if(value){
 
@@ -479,7 +475,7 @@ const InterfacePage = () => {
                     removeSceneObject_ById(scene,"cursor");
                     removeSceneObject_ById(scene, "cursor_label");
                 }
-            }) 
+            }); 
 
             GUI_VOLUMES.add(volumeControlGUI, 'setX').name('Camera to X');
             GUI_VOLUMES.add(volumeControlGUI, 'setY').name('Camera to Y');
@@ -612,7 +608,7 @@ const InterfacePage = () => {
                             const rawPoint_1 = unNormalizePoints([...cS["p1"]], xDim, yDim, zDim); 
                             const rawPoint_2 = unNormalizePoints([...cS["p2"]], xDim, yDim, zDim); 
 
-                            POSTBoxFill(rawPoint_1, rawPoint_2, xDim, yDim, zDim, "", scene, verts_2_PointCloud);
+                            POSTBoxFill(rawPoint_1, rawPoint_2, xDim, yDim, zDim, "", scene, handleVerts_for_cS);
                             
                             //* ### Box Creation CB
                             create_box_from_2_pts_of_obj(
@@ -698,27 +694,35 @@ const InterfacePage = () => {
         //* ========== ========== ========== ========== ==========
         //* >> TOGGLING OF SAVED MANUAL ANNOTATIONS
         //* ========== ========== ========== ========== ==========    
-
+                    const xDim = volume1.RASDimensions[0];
+                    const yDim = volume1.RASDimensions[1];
+                    const zDim = volume1.RASDimensions[2];
         if(sA) { //Saved Annotations 
             for(const annotation of Object.keys(sA)) {
 
                 const savedAnnotationObjectValue = sA[annotation];
 
-                //Create the Entry in lil-gui controls 
+                //* Create the Entry in lil-gui controls 
 
                 savedAnnos_GUI[annotation] = true;
-
                 //TODO: Fix Point Severity Prefix `(S)`
                 let pointToggle = GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, annotation).name("(S) "+annotation); //Apply to Folder
 
-                // 
-                create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, 0.5, textMeshes, ThreeFontLoader, TextGeometry);
-                
+                //* CREATE POINT CLOUD & ASSOCIATED LABEL
+                verts_2_PointCloud(scene, xDim, yDim, zDim,savedAnnotationObjectValue["verts"], annotation);
+                addTextMesh_withId(scene, ThreeFontLoader, TextGeometry, savedAnnotationObjectValue["p1"][0] , savedAnnotationObjectValue["p1"][1], savedAnnotationObjectValue["p1"][2],
+                annotation, annotation, 0xffffff, textMeshes);
+
                 // hook into the change event
                 pointToggle.onChange(function(value) {                //`value` is boolean
 
                     if(value) {
-                        create_box_from_2_pts_of_obj(scene, DEFECT_LIST, DEFECT_COLORS, DEFECT_COLORS_TEXT, savedAnnotationObjectValue, null, annotation, annotation, 0.5, textMeshes, ThreeFontLoader, TextGeometry);
+                        
+                        //* CREATE POINT CLOUD & ASSOCIATED LABEL
+                        verts_2_PointCloud(scene, xDim, yDim, zDim,savedAnnotationObjectValue["verts"], annotation);
+                        addTextMesh_withId(scene, ThreeFontLoader, TextGeometry, savedAnnotationObjectValue["p1"][0] , savedAnnotationObjectValue["p1"][1], savedAnnotationObjectValue["p1"][2],
+                        annotation, annotation, 0xffffff, textMeshes);
+                    
                     } else {
                         removeSceneObject_ById(scene, annotation);
                         removeSceneObject_ById(scene, annotation+"_label");
