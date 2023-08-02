@@ -148,7 +148,7 @@ export function addTextMesh_withId (scene, FontLoader, TextGeometry, X,Y,Z, text
     });
 }
 
-export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices, annoName){
+export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices, annoName, cloudColor){
     let normalized_vertices = [];
 
     for (const v3 of vertices) {
@@ -170,12 +170,16 @@ export function verts_2_PointCloud(scene, xDim, yDim, zDim, vertices, annoName){
         verticesArray[i * 3 + 2] = normalized_vertices[i].z;
     }           
 
+    if(!cloudColor) {
+        cloudColor = 0xff0000;
+    }
+
     // Assign attributes to the geometry
     geometry.setAttribute('position', new THREE.BufferAttribute(verticesArray, 3));
 
     // Create a material
 
-    let material = new THREE.PointsMaterial({ color: 0xff0000, size: 1.5, sizeAttenuation: false });
+    let material = new THREE.PointsMaterial({ color: cloudColor, size: 1.5, sizeAttenuation: false });
 
     // Create a points (particle system)
     let points = new THREE.Points(geometry, material);

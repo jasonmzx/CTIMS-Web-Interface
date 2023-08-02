@@ -153,7 +153,7 @@ const InterfacePage = () => {
             captureStatus["verts"] = verts;
 
         //* 2. Render Temporary Point Cloud:
-            verts_2_PointCloud(scene,xDim,yDim,zDim,verts,"");
+            verts_2_PointCloud(scene,xDim,yDim,zDim,verts,"",false);
 
         //* 3. Save X, Y, Z as Point 1 if applicable (OPTIONAL)
             if(x || y || z || (x === 0 && y === 0 && z === 0)) { //If one coord is true, or they are all Explicitly value 0
@@ -667,9 +667,9 @@ const InterfacePage = () => {
             //If both points are there, create bounding box
 
             const GUI_ANNO_VIEW = gui.addFolder('Annotations');
-            GUI_ANNO_VIEW.add(annotationControlsGUI, "save_point").name("📷 Save Point");
-            GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p1").name("DELETE 🗙 Point 1");
-            GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point 2");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "save_point").name("Capture Point");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p1").name("DELETE 🗙 Point (1/2)");
+            GUI_ANNO_VIEW.add(annotationControlsGUI, "delete_p2").name("DELETE 🗙 Point (2/2)");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "save_annotation").name("Save This Annotation");
             GUI_ANNO_VIEW.add(annotationControlsGUI, "floodfill_point").name("1.PT Flood Fill Detection");
 
@@ -708,26 +708,43 @@ const InterfacePage = () => {
                 //TODO: Fix Point Severity Prefix `(S)`
                 let pointToggle = GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, annotation).name("(S) "+annotation); //Apply to Folder
 
+
+                const severity = savedAnnotationObjectValue["severity"];
+                const idx = DEFECT_LIST.indexOf(severity);  
+
+                const sA_HEX_cloud_color = DEFECT_COLORS[idx];
+                const sA_HEX_label_color = DEFECT_COLORS_TEXT[idx];
+                
                 //* CREATE POINT CLOUD & ASSOCIATED LABEL
-                verts_2_PointCloud(scene, xDim, yDim, zDim,savedAnnotationObjectValue["verts"], annotation);
-                addTextMesh_withId(scene, ThreeFontLoader, TextGeometry, savedAnnotationObjectValue["p1"][0] , savedAnnotationObjectValue["p1"][1], savedAnnotationObjectValue["p1"][2],
-                annotation, annotation, 0xffffff, textMeshes);
+                verts_2_PointCloud(scene, xDim, yDim, zDim,savedAnnotationObjectValue["verts"], annotation, sA_HEX_cloud_color);
+                
+                addTextMesh_withId(
+                    scene, ThreeFontLoader, TextGeometry, 
+                    savedAnnotationObjectValue["p1"][0], 
+                    savedAnnotationObjectValue["p1"][1], 
+                    savedAnnotationObjectValue["p1"][2],
+                annotation, annotation, sA_HEX_label_color, textMeshes);
 
-                // hook into the change event
-                pointToggle.onChange(function(value) {                //`value` is boolean
-
-                    if(value) {
+            //* On Check or Un-Check Event for Generated Saved Annotation Checkboxes
+            pointToggle.onChange(function(value) { //`value` is boolean
+                
+                if(value) {
                         
                         //* CREATE POINT CLOUD & ASSOCIATED LABEL
-                        verts_2_PointCloud(scene, xDim, yDim, zDim,savedAnnotationObjectValue["verts"], annotation);
-                        addTextMesh_withId(scene, ThreeFontLoader, TextGeometry, savedAnnotationObjectValue["p1"][0] , savedAnnotationObjectValue["p1"][1], savedAnnotationObjectValue["p1"][2],
-                        annotation, annotation, 0xffffff, textMeshes);
+                        verts_2_PointCloud(scene, xDim, yDim, zDim,savedAnnotationObjectValue["verts"], annotation, sA_HEX_cloud_color);
+                        
+                        addTextMesh_withId(
+                            scene, ThreeFontLoader, TextGeometry, 
+                            savedAnnotationObjectValue["p1"][0], 
+                            savedAnnotationObjectValue["p1"][1], 
+                            savedAnnotationObjectValue["p1"][2],
+                        annotation, annotation, sA_HEX_label_color, textMeshes);
                     
-                    } else {
+                } else {
                         removeSceneObject_ById(scene, annotation);
                         removeSceneObject_ById(scene, annotation+"_label");
-                    }
-                }); 
+                }
+            }); 
             }
             GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "manage_saved_annos").name("⚙️Manage Saved Annotations");
         }

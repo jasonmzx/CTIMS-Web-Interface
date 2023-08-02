@@ -35,12 +35,17 @@ const saveManualAnnotation_toLS = (defectName, inspectionType) => {
 
     //TODO FIX: DOM HOOK-INS since React State is buggy
     let dS = "";
-    for(const i in DEFECT_LIST) {
-        let defect = DEFECT_LIST[i];
-        if(document.getElementById(defect).checked === true) {
-            dS = defect;
+    if(isDefective) {
+        for(const i in DEFECT_LIST) {
+            let defect = DEFECT_LIST[i];
+            if(defect !== "") {
+                if(document.getElementById(defect).checked === true) {
+                    dS = defect;
+                }
+            }
         }
     }
+    //TODO FIX: ^^^ Quite Jank
 
     //Add Manual Annotation Entry:
     mA[defectName] = {
@@ -68,9 +73,11 @@ const genDefects = () => {
     for(const i in DEFECT_LIST) {
         let defect = DEFECT_LIST[i];
 
-        defectList.push(
-            <><input type="radio" value={defect} id={defect}/> {defect} <br/></>
-        )
+        if(defect !== "") {
+            defectList.push(
+                <><input type="radio" value={defect} id={defect}/> {defect} <br/></>
+            )
+        }
     }
     return defectList;
 }

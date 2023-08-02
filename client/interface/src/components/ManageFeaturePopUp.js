@@ -20,6 +20,40 @@ const ManageFeaturePopUp = ({onClose, onCloseReload, LSFeatureRef, featureName})
         };
   }
 
+  function download_LS_VAR_2_JSON(localStorageKey, filename) {
+    // Retrieve data from local storage
+    var data = localStorage.getItem(localStorageKey);
+    
+    // Check if data is null or empty
+    if (!data) {
+        console.error('No data found in local storage with key:', localStorageKey);
+        return;
+    }
+    
+    // Parse the data to JSON
+    var jsonData = null;
+    try {
+        jsonData = JSON.parse(data);
+    } catch (e) {
+        console.error('Invalid JSON data in local storage with key:', localStorageKey);
+        return;
+    }
+
+    // Stringify the data with indents
+    var jsonString = JSON.stringify(jsonData, null, 2);
+
+    // Create a Blob from the JSON string
+    var blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+
+    // Create a URL for the Blob
+    var url = URL.createObjectURL(blob);
+
+    // Create an anchor tag and click it to download the file
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  }
 
   const manageFeatureSwitch = () => {
     
@@ -77,6 +111,13 @@ const ManageFeaturePopUp = ({onClose, onCloseReload, LSFeatureRef, featureName})
 
       jsxDump.push(elm);
     }
+
+    //* Add the Export to JSON Button
+    jsxDump.push(<br></br>);
+    jsxDump.push(<button onClick={() => {
+      download_LS_VAR_2_JSON(LS_ANNO,"defects.json");
+    }}> Export Annotations to JSON File</button>)
+
     return jsxDump;
   }
   
