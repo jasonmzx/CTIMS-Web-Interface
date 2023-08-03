@@ -1,4 +1,6 @@
 import React from 'react'
+
+import { POSTJsonFileToAPI } from '../util/requests';
 import { setLSObject, removeKeyFromCoordsObject, getLocalStorageVariable, LS_SAVED_COORDS_KEY, LS_ANNO } from '../util/handleLS';
 
 const ManageFeaturePopUp = ({onClose, onCloseReload, LSFeatureRef, featureName}) => {
@@ -53,6 +55,10 @@ const ManageFeaturePopUp = ({onClose, onCloseReload, LSFeatureRef, featureName})
     a.href = url;
     a.download = filename;
     a.click();
+  }
+
+  function PostJSONFileCallback(json) {
+    console.log(json);
   }
 
   const manageFeatureSwitch = () => {
@@ -114,9 +120,17 @@ const ManageFeaturePopUp = ({onClose, onCloseReload, LSFeatureRef, featureName})
 
     //* Add the Export to JSON Button
     jsxDump.push(<br></br>);
-    jsxDump.push(<button onClick={() => {
-      download_LS_VAR_2_JSON(LS_ANNO,"defects.json");
-    }}> Export Annotations to JSON File</button>)
+    
+    jsxDump.push(<button className="blue-button" 
+    onClick={() => { download_LS_VAR_2_JSON(LS_ANNO,"defects.json");}}> 
+      Export Annotations to JSON File
+    </button>)
+    jsxDump.push(<br></br>);
+    //* Add Upload to JSON Button
+    jsxDump.push(<button className="blue-button"
+    onClick={() => { POSTJsonFileToAPI(LS_ANNO,PostJSONFileCallback);}}> 
+    Post Annotations JSON to API
+    </button>)
 
     return jsxDump;
   }

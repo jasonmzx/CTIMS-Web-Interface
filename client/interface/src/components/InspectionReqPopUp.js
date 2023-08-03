@@ -4,7 +4,7 @@ import TimeCounter from './TimeCounter';
 import PingServerComp from './PingServerComp';
 
 import { PingServer } from '../util/requests';
-import { getLSvarName, getLocalStorageVariable } from '../util/handleLS';
+import { getLSvarName, getLocalStorageVariable, setLocalStorageVariable, LS_MASK_PID } from '../util/handleLS';
 
 const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDproc_cb, getNRRDmask_cb}) => {
 
@@ -51,7 +51,10 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
         let checkStat = await checkNRRDproc_cb(pid);
 
         if(checkStat.status === 1) { // If Process is complete, let's load it in
-            getNRRDmask_cb(checkStat.process_path); //RETURNED F_PATH, TODO: CHANGE THE NAME ITS BAD LOL
+            getNRRDmask_cb(checkStat.process_path); //RETURNED F_PATH, TODO: CHANGE THE NAME ITS BAD 
+
+            //Once the Process Loads in, Append Process Path to a LS Variable
+            setLocalStorageVariable(LS_MASK_PID, pid);
         } else {
             
         }

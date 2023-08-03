@@ -6,6 +6,8 @@ export const LS_SAVED_COORDS_KEY = "coords"; //Saved Coordinates for Easy Viewin
 export const LS_ANNO_CAPTURE_STATUS = "capture_status"; //Annotation Capture Status
 export const LS_ANNO = "manual_annotation"; // Saved Manual Annotations
 
+export const LS_MASK_PID = "process_id"; // Saved Process ID that's used for the mask
+
 export function   getLSvarName(){ return LS_GATEWAY_KEY};
 
 export function getLocalStorageVariable(variableName)  {

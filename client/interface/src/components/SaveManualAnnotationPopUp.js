@@ -1,5 +1,5 @@
 import React from 'react'
-import { getLocalStorageVariable, setLSObject, LS_ANNO_CAPTURE_STATUS, LS_ANNO } from '../util/handleLS';
+import { getLocalStorageVariable, setLSObject, LS_ANNO_CAPTURE_STATUS, LS_ANNO, LS_MASK_PID } from '../util/handleLS';
 import {DEFECT_LIST, cS_RESET} from '../util/constant';
 import { unNormalizePoints } from '../util/ThreeHelper';
 
@@ -47,8 +47,13 @@ const saveManualAnnotation_toLS = (defectName, inspectionType) => {
     }
     //TODO FIX: ^^^ Quite Jank
 
+    let maskPid = getLocalStorageVariable(LS_MASK_PID);
+
+    //* NOTE: cS["verts"] are already UnNormalized to THREE (GOOD FOR NRRD !!!)
+
     //Add Manual Annotation Entry:
     mA[defectName] = {
+        "process_id" : maskPid,
         "p1" : cS["p1"],
         "p1_nrrd" : unNormalizePoints([...cS["p1"]], xDim, yDim, zDim),
         "is_defective" : isDefective,

@@ -196,3 +196,47 @@ export async function POSTBoxFill(p1, p2, xDim, yDim, zDim, nrrdName, scene, han
     return error.message;
   }
 }
+
+//* ========== ========== ========== ========== ==========
+//* >> GET / POST of JSON Files for Defect
+//* ========== ========== ========== ========== ==========
+
+export async function POSTJsonFileToAPI(localStorageKey, callback) {
+  try {
+    const gatewayURL = getLocalStorageVariable(getLSvarName());
+    var data = localStorage.getItem(localStorageKey);
+    
+    // Check if data is null or empty
+    if (!data) {
+        console.error('No data found in local storage with key:', localStorageKey);
+        return;
+    }
+    
+    // Parse the data to JSON
+    var jsonData = null;
+    try {
+        jsonData = JSON.parse(data);
+    } catch (e) {
+        console.error('Invalid JSON data in local storage with key:', localStorageKey);
+        return;
+    }
+
+    // Create a blob from your JSON object
+    const blob = new Blob([JSON.stringify(jsonData)], { type: 'application/json' });
+
+    // Append the blob to a new FormData object
+    const formData = new FormData();
+    formData.append('file', blob, "defects.json");
+
+    const RESPONSE = await fetch(gatewayURL + "/upload_defect_json", {
+      method: 'POST',
+      body: formData
+    });
+
+    const jsonResp = await RESPONSE.json();
+    callback(jsonResp);
+
+  } catch (error) {
+    return error.message;
+  }
+}
