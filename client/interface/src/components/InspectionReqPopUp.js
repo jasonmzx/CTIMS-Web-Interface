@@ -4,7 +4,7 @@ import TimeCounter from './TimeCounter';
 import PingServerComp from './PingServerComp';
 
 import { PingServer } from '../util/requests';
-import { getLSvarName, getLocalStorageVariable, setLocalStorageVariable, LS_MASK_PID } from '../util/handleLS';
+import { getLSvarName, getLocalStorageVariable, setLocalStorageVariable, LS_MASK_PID, LS_FOUND_DEFECTS } from '../util/handleLS';
 
 const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDproc_cb, getNRRDmask_cb}) => {
 
@@ -39,6 +39,7 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
     const PostUI_Handle = async () => {
         //let res = await postNRRDs_cb();
         let res = { "process_id" : "fake_volume"}; //! UNCOMMENT FOR FIXED PROCESS (FAKE ENDPOINT)
+        
         if(typeof res === "object") {
             set_JSX_Renderer( processCreatedJSX(res.process_id) );
             return;
@@ -53,8 +54,20 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
         if(checkStat.status === 1) { // If Process is complete, let's load it in
             getNRRDmask_cb(checkStat.process_path); //RETURNED F_PATH, TODO: CHANGE THE NAME ITS BAD 
 
-            //Once the Process Loads in, Append Process Path to a LS Variable
-            setLocalStorageVariable(LS_MASK_PID, pid);
+            //*Once the Process Loads in;
+                
+            //&Append Process Path to a LS Variable
+                setLocalStorageVariable(LS_MASK_PID, pid);
+            
+            //&Append Found Defects to LS
+                setLocalStorageVariable(LS_FOUND_DEFECTS, JSON.stringify(checkStat.found_defects));
+
+            //Append Found Defects ot Scene, if applicable
+                console.log("FOUND DEFECTS");
+                console.log(checkStat.found_defects);
+
+                //renderFoundDefects_cb(checkStat.found_defects, sceneDrill, volumeDrill);
+
         } else {
             
         }

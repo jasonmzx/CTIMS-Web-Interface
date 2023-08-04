@@ -27,7 +27,7 @@ import ManageFeaturePopUp from '../components/ManageFeaturePopUp';
 
 //* Local Storage Handlers & Helpers
 
-import { LS_ANNO, getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
+import { LS_ANNO, LS_FOUND_DEFECTS, getLocalStorageVariable, setLSObject} from '../util/handleLS'; //Functions
 import { LS_SAVED_COORDS_KEY, LS_ANNO_CAPTURE_STATUS } from '../util/handleLS'; //Constants
 import { DEFECT_COLORS, DEFECT_COLORS_TEXT, DEFECT_LIST, cS_RESET } from '../util/constant';
 
@@ -134,12 +134,18 @@ const InterfacePage = () => {
         return resp;
     }
 
-    const API_getMaskFile = async (Process_ID_String) => {
-        //*### Initialize Capture Points JSON object, Or Set back to None ###
+    const API_getMaskFile = async (Process_ID_String, found_defects, scene, volume) => {
+        
+        //Initialize Capture Points JSON object, Or Set back to None ###
         setLSObject(LS_ANNO_CAPTURE_STATUS, cS_RESET); 
+
+        // Set Defect Mask
         await GET_MASK_From_Process(Process_ID_String, setAPN);
         iLog("Defect Mask Set !");
+
     }
+
+
 
     //* This function handles incoming Vertices (from API) into Capture Status Object, with appropriate assertions
         const handleVerts_for_cS = (verts, scene, xDim, yDim, zDim,x,y,z) => {
@@ -383,6 +389,12 @@ const InterfacePage = () => {
                 emptyBool : false
             };
 
+
+
+        //CHECK FOR FOUND DEFECTS:
+
+
+
         // Create sliders
         const GUI_VOLUMES = gui.addFolder('Volume Inspection');
             ['x', 'y', 'z'].forEach(axis => {
@@ -438,7 +450,7 @@ const InterfacePage = () => {
                     slice.mesh.material.transparent = true; // Enable transparency
                     slice.mesh.material.needsUpdate = true; // Required for material property changes to take effect
                 });
-            });
+        });
 
             let cursorToggle = GUI_VOLUMES.add(volumeControlGUI, 'emptyBool').name('🎯 Toggle Cursor');
 
@@ -522,10 +534,13 @@ const InterfacePage = () => {
             const GUI_POI = gui.addFolder('Positions of Interest');
             GUI_POI.add(poiControlsGUI, "save_coords").name("📷 Save Position");
 
+            //! VOLUME RASTER DIMENSIONS
+            const xDim = volume1.RASDimensions[0];
+            const yDim = volume1.RASDimensions[1];
+            const zDim = volume1.RASDimensions[2];
+
             let allCoords = getLocalStorageVariable(LS_SAVED_COORDS_KEY);
             allCoords = JSON.parse(allCoords);
-
-
 
             if (allCoords) {
 
@@ -556,6 +571,22 @@ const InterfacePage = () => {
 
             } else {
                 console.log("No coordinates found in local storage");
+            }
+
+
+            let found_defects = getLocalStorageVariable(LS_FOUND_DEFECTS);
+            found_defects = JSON.parse(found_defects);
+
+            if(found_defects) {
+                for(let defect_idx in found_defects) {
+
+                    const defect = found_defects[defect_idx];
+
+                    console.log(defect["verts"]);
+                    console.log(defect["defect_name"]);
+
+                    verts_2_PointCloud(scene,xDim,yDim,zDim, defect["verts"], defect["defect_name"], 0xFFBF00);
+                }
             }
 
 //? ################ ANNOTATION GUI #####################
@@ -694,9 +725,6 @@ const InterfacePage = () => {
         //* ========== ========== ========== ========== ==========
         //* >> TOGGLING OF SAVED MANUAL ANNOTATIONS
         //* ========== ========== ========== ========== ==========    
-                    const xDim = volume1.RASDimensions[0];
-                    const yDim = volume1.RASDimensions[1];
-                    const zDim = volume1.RASDimensions[2];
         if(sA) { //Saved Annotations 
             for(const annotation of Object.keys(sA)) {
 
@@ -725,8 +753,8 @@ const InterfacePage = () => {
                     savedAnnotationObjectValue["p1"][2],
                 annotation, annotation, sA_HEX_label_color, textMeshes);
 
-            //* On Check or Un-Check Event for Generated Saved Annotation Checkboxes
-            pointToggle.onChange(function(value) { //`value` is boolean
+             //* On Check or Un-Check Event for Generated Saved Annotation Checkboxes
+             pointToggle.onChange(function(value) { //`value` is boolean
                 
                 if(value) {
                         
@@ -744,7 +772,7 @@ const InterfacePage = () => {
                         removeSceneObject_ById(scene, annotation);
                         removeSceneObject_ById(scene, annotation+"_label");
                 }
-            }); 
+             }); 
             }
             GUI_SAVED_ANNO_VIEW.add(savedAnnos_GUI, "manage_saved_annos").name("⚙️Manage Saved Annotations");
         }

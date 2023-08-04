@@ -7,6 +7,7 @@ export const LS_ANNO_CAPTURE_STATUS = "capture_status"; //Annotation Capture Sta
 export const LS_ANNO = "manual_annotation"; // Saved Manual Annotations
 
 export const LS_MASK_PID = "process_id"; // Saved Process ID that's used for the mask
+export const LS_FOUND_DEFECTS = "found_defects";
 
 export function   getLSvarName(){ return LS_GATEWAY_KEY};
 

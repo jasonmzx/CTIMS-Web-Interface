@@ -87,7 +87,7 @@ const genDefects = () => {
     return defectList;
 }
 
-    const render = () => {
+const render = () => {
 
         //Check if `p1` and `p2` aren't null
 
@@ -164,7 +164,7 @@ const genDefects = () => {
 
         return("You haven't captured 2 points yet...");
 
-    }
+}
 
     return (<div className="modal" onClick={handleBackgroundClick}>
     
