@@ -126,8 +126,7 @@ export async function PingServer() {
 
 export async function POSTFloodFill(x,y,z, xDim, yDim, zDim, nrrdName,scene,callback) {
 
-  let pid = getLocalStorageVariable(LS_MASK_PID);
-  const pid_fname = "nrrd_ressources/"+pid+".nrrd";
+  let pid_path = getLocalStorageVariable(LS_MASK_PID);
 
   try {
     const gatewayURL = getLocalStorageVariable(getLSvarName());
@@ -143,7 +142,7 @@ export async function POSTFloodFill(x,y,z, xDim, yDim, zDim, nrrdName,scene,call
           "y": y,
           "z": z,
           "threshold": 0,
-          "filename": pid_fname
+          "filename": pid_path
         })
       //& #################### ENDOF POST BODY HERE ####################
     });
@@ -160,8 +159,8 @@ export async function POSTFloodFill(x,y,z, xDim, yDim, zDim, nrrdName,scene,call
 //* ========== ========== ========== ========== ==========
 
 export async function POSTBoxFill(p1, p2, xDim, yDim, zDim, nrrdName, scene, handleVerts_CALLBACK) {
-  let pid = getLocalStorageVariable(LS_MASK_PID);
-  const pid_fname = "nrrd_ressources/"+pid+".nrrd";
+  
+  let pid_path = getLocalStorageVariable(LS_MASK_PID);
 
   try {
     const gatewayURL = getLocalStorageVariable(getLSvarName());
@@ -176,7 +175,7 @@ export async function POSTBoxFill(p1, p2, xDim, yDim, zDim, nrrdName, scene, han
           "p1": p1,
           "p2": p2,
           "threshold": 0,
-          "filename": pid_fname
+          "filename": pid_path
         })
       //& #################### ENDOF POST BODY HERE ####################
     });

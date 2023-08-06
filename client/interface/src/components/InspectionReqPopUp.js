@@ -37,8 +37,8 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
     }   
 
     const PostUI_Handle = async () => {
-        let res = await postNRRDs_cb();
-        //let res = { "process_id" : "fake_volume"}; //! UNCOMMENT FOR FIXED PROCESS (FAKE ENDPOINT)
+        //let res = await postNRRDs_cb();
+        let res = { "process_id" : "fake_volume"}; //! UNCOMMENT FOR FIXED PROCESS (FAKE ENDPOINT)
         
         if(typeof res === "object") {
             set_JSX_Renderer( processCreatedJSX(res.process_id) );
@@ -57,7 +57,7 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
             //*Once the Process Loads in;
                 
             //&Append Process Path to a LS Variable
-                setLocalStorageVariable(LS_MASK_PID, pid);
+                setLocalStorageVariable(LS_MASK_PID, checkStat.process_path);
             
             //&Append Found Defects to LS
                 setLocalStorageVariable(LS_FOUND_DEFECTS, JSON.stringify(checkStat.found_defects));
