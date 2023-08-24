@@ -159,7 +159,7 @@ const InterfacePage = () => {
             captureStatus["verts"] = verts;
 
         //* 2. Render Temporary Point Cloud:
-            verts_2_PointCloud(scene,xDim,yDim,zDim,verts,"",false);
+            verts_2_PointCloud(scene,xDim,yDim,zDim,verts,"",0x37FDFC); //Light blue Point Cloud
 
         //* 3. Save X, Y, Z as Point 1 if applicable (OPTIONAL)
             if(x || y || z || (x === 0 && y === 0 && z === 0)) { //If one coord is true, or they are all Explicitly value 0

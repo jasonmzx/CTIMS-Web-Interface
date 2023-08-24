@@ -1,5 +1,9 @@
 import React from 'react'
-import otuLogo from '../util/otuLogo.png'
+
+//Static Assets:
+import otuLogo from '../static/otuLogo.png';
+import nvsLogo from '../static/nvsLogo.jpg';
+import mitacsLogo from '../static/mitacsLogo.png';
 
 const WelcomePopUp = ({onClose}) => {
 
@@ -21,6 +25,8 @@ const WelcomePopUp = ({onClose}) => {
                     {/* Left column (image) */}
                     <div>
                         <img src={otuLogo} height="100px"/>
+                        <img src={nvsLogo} height="100px"/>
+                        <img src={mitacsLogo} width="90px"/>
                     </div>
                     {/* Right column (text) */}
                     <div>
@@ -46,18 +52,23 @@ const WelcomePopUp = ({onClose}) => {
         allowFullScreen>
       </iframe>
     </div>
-
+                    <h3 style={{color : "slategrey"}}>Industry Partners : New Vision Systems & Mitacs</h3> 
                         <p style={{fontSize: "16px"}}> <br/> 
-                        This project is under the supervision of <span style={{fontWeight : "bold"}}>Dr. Hossam Gaber </span> & <span style={{fontWeight : "bold"}}>Dr. Chahid Abderrazak </span>  <br/>
-                        
-                        <br/>
+                        This project is under the supervision of <span style={{fontWeight : "bold"}}>Dr. Hossam A. Gaber</span>. <br/><br/>
+
+                        <span style={{fontWeight: "bold"}}>Developpement Team:</span>
+                        <ul>
+                            <li><span>Dr. Chahid Abderrazak (Post-Doc Researcher)</span></li>
+                            <li><span>Jason Manarroo, Undergrad Summer Research Student</span></li>
+                            <li><span>Other researchers at Ontario Tech University which developed Backend Functionalities of CTIMS.</span></li>
+                        </ul>
+
 
                             For inquires or information, please contact Dr. Gaber at <span style={{fontWeight : "bold"}}>hossam.gaber@ontariotechu.net </span>
                         </p>
 
                         <div style={{color : "slategrey", textAlign: "center" , fontSize: "12px"}}>
-    <p>&copy; 2023 - Ontario Tech University. All rights reserved.</p>
-    <p>This project was developed by Jason Manarroo, Undergrad Summer Research Student.</p>
+    <p>&copy; 2023 - New Vision Systems. All rights reserved.</p>
 </div>
                     </div>
                 </div>
