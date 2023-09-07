@@ -37,8 +37,8 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
     }   
 
     const PostUI_Handle = async () => {
-        //let res = await postNRRDs_cb();
-        let res = { "process_id" : "fake_volume"}; //! UNCOMMENT FOR FIXED PROCESS (FAKE ENDPOINT)
+        let res = await postNRRDs_cb();
+        //let res = { "process_id" : "fake_volume"}; //! UNCOMMENT FOR FIXED PROCESS (FAKE ENDPOINT)
         
         if(typeof res === "object") {
             set_JSX_Renderer( processCreatedJSX(res.process_id) );
