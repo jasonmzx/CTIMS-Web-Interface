@@ -4,7 +4,7 @@ import TimeCounter from './TimeCounter';
 import PingServerComp from './PingServerComp';
 
 import { PingServer } from '../util/requests';
-import { getLSvarName, getLocalStorageVariable, setLocalStorageVariable, LS_MASK_PID, LS_FOUND_DEFECTS } from '../util/handleLS';
+import { getLSvarName, getLocalStorageVariable, setLocalStorageVariable, LS_MASK_PID, LS_FOUND_DEFECTS, LS_DEV_MODE } from '../util/handleLS';
 
 const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDproc_cb, getNRRDmask_cb}) => {
 
@@ -37,8 +37,14 @@ const InspectionReqPopUp = ({onClose, refBlob, inpBlob, postNRRDs_cb, checkNRRDp
     }   
 
     const PostUI_Handle = async () => {
+
         let res = await postNRRDs_cb();
-        //let res = { "process_id" : "fake_volume"}; //! UNCOMMENT FOR FIXED PROCESS (FAKE ENDPOINT)
+
+        //Set Resquest Post Body to "Fake Volume" for Dev purposes
+        const isDevMode = getLocalStorageVariable(LS_DEV_MODE);
+        if(isDevMode) {
+            res = { "process_id" : "fake_volume"}; //! UNCOMMENT FOR FIXED PROCESS (FAKE ENDPOINT)
+        }
         
         if(typeof res === "object") {
             set_JSX_Renderer( processCreatedJSX(res.process_id) );

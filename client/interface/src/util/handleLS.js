@@ -9,6 +9,8 @@ export const LS_ANNO = "manual_annotation"; // Saved Manual Annotations
 export const LS_MASK_PID = "process_id"; // Saved Process ID that's used for the mask
 export const LS_FOUND_DEFECTS = "found_defects";
 
+export const LS_DEV_MODE = "dev_mode"
+
 export function   getLSvarName(){ return LS_GATEWAY_KEY};
 
 export function getLocalStorageVariable(variableName)  {
